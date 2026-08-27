@@ -1,6 +1,9 @@
-# Playsheet
+# PlaySheet
 
-Spielstände
+PlaySheet: Digital Scorepad
+PlaySheet: Digitaler Spielblock
+
+## Spielstände
 
 - [ ] Dam'jagen
 - [ ] 10Tausend
@@ -11,12 +14,12 @@ Spielstände
 - [ ] Cluedo
 - [ ] Kingdomino
 
-Spiele
+## Spiele
 
 - [ ] 4gewinnt
 - [ ] Duotär
 
-Ideensammlung...
+## Ideensammlung
 
 - [ ] Käsekästchen
 - [ ] TicTacToe
