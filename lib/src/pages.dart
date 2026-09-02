@@ -81,13 +81,14 @@ class _TileGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 1,
-      mainAxisSpacing: 12,
-      mainAxisExtent: 72,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      children: children,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (var index = 0; index < children.length; index++) ...[
+          if (index > 0) const SizedBox(height: 12),
+          children[index],
+        ],
+      ],
     );
   }
 }
@@ -666,8 +667,8 @@ class _SubroundTableState extends State<_SubroundTable> {
                 width: .6,
               ),
             ),
-            defaultColumnWidth: const FixedColumnWidth(96),
-            columnWidths: const {0: FixedColumnWidth(72)},
+            defaultColumnWidth: const IntrinsicColumnWidth(),
+            columnWidths: const {0: IntrinsicColumnWidth()},
             children: [
               _headerRow(context),
               _totalsRow(context, totals, winningValue),
