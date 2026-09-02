@@ -862,15 +862,14 @@ class _SubroundTableState extends State<_SubroundTable> {
     bool bold = false,
     EdgeInsetsGeometry? padding,
   }) =>
-      ConstrainedBox(
+      Container(
         constraints: const BoxConstraints(minHeight: 48),
-        child: Padding(
-          padding:
-              padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-          child: DefaultTextStyle.merge(
-            style: TextStyle(fontWeight: bold ? FontWeight.bold : null),
-            child: child,
-          ),
+        alignment: Alignment.center,
+        padding:
+            padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: DefaultTextStyle.merge(
+          style: TextStyle(fontWeight: bold ? FontWeight.bold : null),
+          child: child,
         ),
       );
 
@@ -886,6 +885,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     );
     return _CalculatorField(
       controller: controller,
+      hintText: '0',
       onChanged: onChanged,
     );
   }
@@ -1262,10 +1262,15 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
 }
 
 class _CalculatorField extends StatefulWidget {
-  const _CalculatorField({required this.controller, this.onChanged});
+  const _CalculatorField({
+    required this.controller,
+    this.onChanged,
+    this.hintText,
+  });
 
   final TextEditingController controller;
   final ValueChanged<String>? onChanged;
+  final String? hintText;
 
   @override
   State<_CalculatorField> createState() => _CalculatorFieldState();
@@ -1318,7 +1323,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
           isDense: true,
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(vertical: 8),
-        ),
+        ).copyWith(hintText: widget.hintText),
       );
 }
 
