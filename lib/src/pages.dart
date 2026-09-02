@@ -89,7 +89,7 @@ class HomePage extends StatelessWidget {
                     ),
                     _ActionTile(
                       icon: Icons.casino_rounded,
-                      title: '10 Tausend',
+                      title: '10Tausend',
                       detail:
                           '${_gameCount(controller, 'ten_thousand')} Spiele',
                       onTap: () => pushPage(
@@ -1062,7 +1062,7 @@ class _SubroundTableState extends State<_SubroundTable> {
 
   void _showInvalidScoreError() {
     final message = widget.session.gameBlockId == 'ten_thousand'
-        ? 'Bei 10 Tausend sind nur Werte ab 350 in 50er-Schritten erlaubt.'
+        ? 'Bei 10Tausend sind nur Werte ab 350 in 50er-Schritten erlaubt.'
         : 'Negative Werte sind hier nicht erlaubt.';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),

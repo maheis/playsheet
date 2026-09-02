@@ -1,6 +1,6 @@
 # UI-Spielvorlage: PlaySheet-Spielblock
 
-Diese Vorlage beschreibt das Muster fuer ein neues Spiel innerhalb von PlaySheet. Sie trennt die globale App-Struktur, die Konfiguration einer Spielpartie und die einzelnen Spielrunden. Das Muster ist fuer weitere Spiele wie `Dam'jagen`, `10 Tausend`, `Kingdomino` oder eine Strichliste wiederverwendbar.
+Diese Vorlage beschreibt das Muster fuer ein neues Spiel innerhalb von PlaySheet. Sie trennt die globale App-Struktur, die Konfiguration einer Spielpartie und die einzelnen Spielrunden. Das Muster ist fuer weitere Spiele wie `Dam'jagen`, `10Tausend`, `Kingdomino` oder eine Strichliste wiederverwendbar.
 
 ## 1. Grundidee
 

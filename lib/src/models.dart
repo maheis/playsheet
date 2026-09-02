@@ -115,7 +115,7 @@ const gameBlocks = <GameBlockDefinition>[
   ),
   GameBlockDefinition(
     id: 'ten_thousand',
-    name: '10 Tausend',
+    name: '10Tausend',
     description: 'Würfelrunden mit Zielpunktzahl und persönlichem Verlauf.',
     icon: Icons.casino_rounded,
     color: Color(0xFFFFB74D),
