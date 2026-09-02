@@ -80,6 +80,6 @@ auf derselben Datenbasis aufbauen.
 
 ## ToDo
 
-- [ ] Highlight-Fabe wie in VolleyAce verwenden! Aktuell ist Aktzent für Steuerelemente genutzt!
+- [x] Highlight-Fabe wie in VolleyAce verwenden! Aktuell ist Aktzent für Steuerelemente genutzt!
 - [ ] Settings-Page angleichen mit VolleyAce (Vorschau und Speicherbutton in VolleyAce entfernen!)
 

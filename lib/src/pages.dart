@@ -1544,6 +1544,7 @@ class _CalculatorPadState extends State<_CalculatorPad> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final highlight = Theme.of(context).iconTheme.color ?? colors.secondary;
     final buttons = [
       ('AC', colors.secondaryContainer, colors.onSecondaryContainer),
       ('()', colors.secondaryContainer, colors.onSecondaryContainer),
@@ -1564,7 +1565,7 @@ class _CalculatorPadState extends State<_CalculatorPad> {
       ('0', colors.surfaceContainerHighest, colors.onSurface),
       (',', colors.surfaceContainerHighest, colors.onSurface),
       ('⌫', colors.surfaceContainerHighest, colors.onSurface),
-      ('↵', colors.secondary, colors.onSecondary),
+      ('↵', highlight, Colors.black),
     ];
     return SafeArea(
       top: false,

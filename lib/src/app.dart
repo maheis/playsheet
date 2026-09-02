@@ -48,7 +48,9 @@ class PlaySheetApp extends StatelessWidget {
       brightness: brightness,
     ).copyWith(
       primary: accent,
+      secondary: const Color(0xFFFFB74D),
       tertiary: const Color(0xFF8FDCBE),
+      surfaceTint: const Color(0xFF9575CD),
     );
     return ThemeData(
       useMaterial3: true,
