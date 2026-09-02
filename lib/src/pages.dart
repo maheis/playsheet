@@ -205,13 +205,16 @@ class GameSessionsPage extends StatefulWidget {
 
 class _GameSessionsPageState extends State<GameSessionsPage> {
   Future<void> _createGame() async {
-    await pushPage(
+    final session = await pushPage<GameSession>(
       context,
       GameSessionConfigPage(
         controller: widget.controller,
         block: widget.block,
       ),
     );
+    if (session != null && mounted) {
+      await _openGame(session);
+    }
     if (mounted) setState(() {});
   }
 
@@ -275,8 +278,10 @@ class _GameSessionsPageState extends State<GameSessionsPage> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      '${session.highWins ? 'Hoch' : 'Tief'} • '
-                      '${_roundCount(session)} Runden',
+                      'Angelegt: ${_formatDate(session.createdAt)}',
+                    ),
+                    Text(
+                      'Zuletzt gespielt: ${_lastPlayedLabel(session)}',
                     ),
                   ],
                 ),
@@ -311,9 +316,18 @@ class _GameSessionsPageState extends State<GameSessionsPage> {
     );
   }
 
-  int _roundCount(GameSession session) => widget.controller.games
-      .where((game) => game.sessionId == session.id)
-      .length;
+  String _lastPlayedLabel(GameSession session) {
+    final games = widget.controller.games
+        .where((game) => game.sessionId == session.id)
+        .toList();
+    return games.isEmpty ? '–' : _formatDate(_lastPlayedAt(session));
+  }
+
+  String _formatDate(DateTime value) {
+    String twoDigits(int number) => number.toString().padLeft(2, '0');
+    return '${twoDigits(value.day)}.${twoDigits(value.month)}.'
+        '${value.year} ${twoDigits(value.hour)}:${twoDigits(value.minute)}';
+  }
 
   String _playerNames(GameSession session) => session.playerIds
       .map((id) => widget.controller.playerById(id)?.name ?? 'Unbekannt')
@@ -369,6 +383,7 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
   bool highWins = true;
   final selectedPlayerIds = <String>{};
   GameSession? session;
+  bool closing = false;
 
   @override
   void initState() {
@@ -383,147 +398,167 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: Text('${widget.block.name} konfigurieren'),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextField(
-              controller: name,
-              autofocus: true,
-              onChanged: (_) => _persistConfiguration(),
-              decoration: const InputDecoration(
-                labelText: 'Name',
-                hintText: 'z. B. Spieleabend',
-                border: OutlineInputBorder(),
-              ),
+  Widget build(BuildContext context) => PopScope<GameSession?>(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _closeConfiguration();
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text('${widget.block.name} konfigurieren'),
+            leading: IconButton(
+              tooltip: 'Zurück',
+              icon: const Icon(Icons.arrow_back_rounded),
+              onPressed: _closeConfiguration,
             ),
-            if (widget.block.id != 'ten_thousand') ...[
-              const SizedBox(height: 20),
-              Text('Gewinnart', style: Theme.of(context).textTheme.titleMedium),
-              RadioListTile<bool>(
-                value: true,
-                groupValue: highWins,
-                title: const Text('Hoch gewinnt'),
-                onChanged: (value) {
-                  setState(() => highWins = value ?? true);
-                  _persistConfiguration();
-                },
+          ),
+          body: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              TextField(
+                controller: name,
+                autofocus: true,
+                onChanged: (_) => _persistConfiguration(),
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  hintText: 'z. B. Spieleabend',
+                  border: OutlineInputBorder(),
+                ),
               ),
-              RadioListTile<bool>(
-                value: false,
-                groupValue: highWins,
-                title: const Text('Tief gewinnt'),
-                onChanged: (value) {
-                  setState(() => highWins = value ?? true);
-                  _persistConfiguration();
+              if (widget.block.id != 'ten_thousand') ...[
+                const SizedBox(height: 20),
+                Text('Gewinnart',
+                    style: Theme.of(context).textTheme.titleMedium),
+                RadioListTile<bool>(
+                  value: true,
+                  groupValue: highWins,
+                  title: const Text('Hoch gewinnt'),
+                  onChanged: (value) {
+                    setState(() => highWins = value ?? true);
+                    _persistConfiguration();
+                  },
+                ),
+                RadioListTile<bool>(
+                  value: false,
+                  groupValue: highWins,
+                  title: const Text('Tief gewinnt'),
+                  onChanged: (value) {
+                    setState(() => highWins = value ?? true);
+                    _persistConfiguration();
+                  },
+                ),
+              ],
+              const SizedBox(height: 12),
+              Text('Spieler', style: Theme.of(context).textTheme.titleMedium),
+              Autocomplete<Player>(
+                displayStringForOption: (player) => player.name,
+                optionsBuilder: (value) {
+                  final query = value.text.trim().toLowerCase();
+                  if (query.isEmpty) return const Iterable<Player>.empty();
+                  return widget.controller.players.where(
+                    (player) =>
+                        !selectedPlayerIds.contains(player.id) &&
+                        player.name.toLowerCase().contains(query),
+                  );
                 },
-              ),
-            ],
-            const SizedBox(height: 12),
-            Text('Spieler', style: Theme.of(context).textTheme.titleMedium),
-            Autocomplete<Player>(
-              displayStringForOption: (player) => player.name,
-              optionsBuilder: (value) {
-                final query = value.text.trim().toLowerCase();
-                if (query.isEmpty) return const Iterable<Player>.empty();
-                return widget.controller.players.where(
-                  (player) =>
-                      !selectedPlayerIds.contains(player.id) &&
-                      player.name.toLowerCase().contains(query),
-                );
-              },
-              optionsViewBuilder: (context, onSelected, options) => Align(
-                alignment: Alignment.topLeft,
-                child: Material(
-                  elevation: 4,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxHeight: 240),
-                    child: ListView.builder(
-                      padding: EdgeInsets.zero,
-                      shrinkWrap: true,
-                      itemCount: options.length,
-                      itemBuilder: (context, index) {
-                        final player = options.elementAt(index);
-                        return ListTile(
-                          leading: const Icon(Icons.person_rounded),
-                          title: Text.rich(
-                            TextSpan(
-                              children: [
-                                TextSpan(text: player.name),
-                                WidgetSpan(
-                                  alignment: PlaceholderAlignment.baseline,
-                                  baseline: TextBaseline.alphabetic,
-                                  child: Transform.translate(
-                                    offset: const Offset(0, 3),
-                                    child: Text(
-                                      ' ${player.id}',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelSmall,
+                optionsViewBuilder: (context, onSelected, options) => Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxHeight: 240),
+                      child: ListView.builder(
+                        padding: EdgeInsets.zero,
+                        shrinkWrap: true,
+                        itemCount: options.length,
+                        itemBuilder: (context, index) {
+                          final player = options.elementAt(index);
+                          return ListTile(
+                            leading: const Icon(Icons.person_rounded),
+                            title: Text.rich(
+                              TextSpan(
+                                children: [
+                                  TextSpan(text: player.name),
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.baseline,
+                                    baseline: TextBaseline.alphabetic,
+                                    child: Transform.translate(
+                                      offset: const Offset(0, 3),
+                                      child: Text(
+                                        ' ${player.id}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelSmall,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                          onTap: () => onSelected(player),
-                        );
-                      },
+                            onTap: () => onSelected(player),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
-              ),
-              onSelected: (player) {
-                _addPlayer(player);
-                playerNameFieldController?.clear();
-                typedPlayerName = '';
-              },
-              fieldViewBuilder:
-                  (context, fieldController, focusNode, onSubmitted) {
-                playerNameFieldController = fieldController;
-                return TextField(
-                  controller: fieldController,
-                  focusNode: focusNode,
-                  onChanged: (value) => typedPlayerName = value,
-                  onSubmitted: (_) => _addTypedPlayer(fieldController),
-                  decoration: const InputDecoration(
-                    labelText: 'Spieler hinzufügen',
-                    hintText:
-                        'Vorhandenen Spieler suchen oder neuen Namen eingeben',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.person_search_rounded),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final id in selectedPlayerIds)
-                  if (widget.controller.playerById(id) case final player?)
-                    InputChip(
-                      avatar: const Icon(Icons.person_rounded, size: 18),
-                      label: Text(player.name),
-                      onDeleted: () {
-                        setState(() => selectedPlayerIds.remove(id));
-                        _persistConfiguration();
-                      },
+                onSelected: (player) {
+                  playerNameFieldController?.clear();
+                  typedPlayerName = '';
+                  _addPlayer(player);
+                },
+                fieldViewBuilder:
+                    (context, fieldController, focusNode, onSubmitted) {
+                  playerNameFieldController = fieldController;
+                  return TextField(
+                    controller: fieldController,
+                    focusNode: focusNode,
+                    onChanged: (value) => typedPlayerName = value,
+                    onSubmitted: (_) => _addTypedPlayer(fieldController),
+                    decoration: const InputDecoration(
+                      labelText: 'Spieler hinzufügen',
+                      hintText:
+                          'Vorhandenen Spieler suchen oder neuen Namen eingeben',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.person_search_rounded),
                     ),
-              ],
-            ),
-            if (selectedPlayerIds.isEmpty)
-              const Padding(
-                padding: EdgeInsets.only(top: 8),
-                child: Text('Noch keine Spieler hinzugefügt.'),
+                  );
+                },
               ),
-          ],
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (final id in selectedPlayerIds)
+                    if (widget.controller.playerById(id) case final player?)
+                      InputChip(
+                        avatar: const Icon(Icons.person_rounded, size: 18),
+                        label: Text(player.name),
+                        onDeleted: () {
+                          setState(() => selectedPlayerIds.remove(id));
+                          _persistConfiguration();
+                        },
+                      ),
+                ],
+              ),
+              if (selectedPlayerIds.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text('Noch keine Spieler hinzugefügt.'),
+                ),
+            ],
+          ),
         ),
       );
+
+  Future<void> _closeConfiguration() async {
+    if (closing) return;
+    closing = true;
+    await _persistConfiguration();
+    if (!mounted) return;
+    Navigator.pop(context, session);
+  }
 
   void _addPlayer(Player player) {
     if (selectedPlayerIds.add(player.id)) {
@@ -559,8 +594,10 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
       _addPlayer(player);
       typedPlayerName = '';
     }
-    final gameName = name.text.trim();
-    if (gameName.isEmpty || selectedPlayerIds.isEmpty) return;
+    if (selectedPlayerIds.isEmpty) return;
+    final gameName = name.text.trim().isEmpty
+        ? '${widget.block.name} ${widget.controller.gameSessions.length + 1}'
+        : name.text.trim();
     final updated = GameSession(
       id: session?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
       gameBlockId: widget.block.id,
