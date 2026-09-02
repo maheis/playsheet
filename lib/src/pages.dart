@@ -492,6 +492,7 @@ class GameRoundsPage extends StatefulWidget {
     required this.controller,
     required this.session,
   });
+
   final AppController controller;
   final GameSession session;
 
@@ -500,6 +501,119 @@ class GameRoundsPage extends StatefulWidget {
 }
 
 class _GameRoundsPageState extends State<GameRoundsPage> {
+  Future<void> _newRound() async {
+    final round = await widget.controller.addGameRound(
+      sessionId: widget.session.id,
+      gameBlockId: widget.session.gameBlockId,
+      playerIds: widget.session.playerIds,
+    );
+    if (!mounted) return;
+    await pushPage(
+      context,
+      _SubroundTable(
+        controller: widget.controller,
+        session: widget.session,
+        round: round,
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final rounds = widget.controller.gameRounds
+        .where((round) => round.sessionId == widget.session.id)
+        .toList()
+      ..sort((first, second) => first.createdAt.compareTo(second.createdAt));
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.session.name)),
+      body: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          _ActionTile(
+            icon: Icons.add_rounded,
+            title: 'Neue Spielrunde',
+            detail: 'Eine neue Spielrunde beginnen',
+            onTap: _newRound,
+          ),
+          const SizedBox(height: 12),
+          ...rounds.asMap().entries.map(
+                (entry) => Card(
+                  child: ListTile(
+                    leading: CircleAvatar(child: Text('${entry.key + 1}')),
+                    title: Text('Spielrunde ${entry.key + 1}'),
+                    subtitle: Text(
+                      '${entry.value.playerIds.length} Spieler • '
+                      '${_subroundCount(entry.value)} Subrunden',
+                    ),
+                    trailing: IconButton(
+                      tooltip: 'Spielrunde löschen',
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      onPressed: () =>
+                          _confirmDeleteRound(context, entry.value),
+                    ),
+                    onTap: () => pushPage(
+                      context,
+                      _SubroundTable(
+                        controller: widget.controller,
+                        session: widget.session,
+                        round: entry.value,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+        ],
+      ),
+    );
+  }
+
+  int _subroundCount(GameRound round) =>
+      widget.controller.games.where((game) => game.roundId == round.id).length;
+
+  Future<void> _confirmDeleteRound(
+    BuildContext context,
+    GameRound round,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Spielrunde löschen?'),
+        content: const Text('Diese Spielrunde und ihre Subrunden löschen?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await widget.controller.deleteGameRound(round.id);
+      if (mounted) setState(() {});
+    }
+  }
+}
+
+class _SubroundTable extends StatefulWidget {
+  const _SubroundTable({
+    required this.controller,
+    required this.session,
+    required this.round,
+  });
+  final AppController controller;
+  final GameSession session;
+  final GameRound round;
+
+  @override
+  State<_SubroundTable> createState() => _SubroundTableState();
+}
+
+class _SubroundTableState extends State<_SubroundTable> {
   final draftControllers = <String, TextEditingController>{};
   final roundControllers = <String, TextEditingController>{};
 
@@ -517,11 +631,11 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
   @override
   Widget build(BuildContext context) {
     final rounds = widget.controller.games
-        .where((game) => game.sessionId == widget.session.id)
+        .where((game) => game.roundId == widget.round.id)
         .toList()
       ..sort((first, second) => first.playedAt.compareTo(second.playedAt));
     final totals = {
-      for (final player in widget.session.playerIds)
+      for (final player in widget.round.playerIds)
         player: rounds.fold<int>(
           0,
           (sum, round) => sum + (round.scores[player] ?? 0),
@@ -565,7 +679,7 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
   TableRow _headerRow(BuildContext context) => TableRow(
         children: [
           _tableCell(context, const Text('Runden'), bold: true),
-          ...widget.session.playerIds.map(
+          ...widget.round.playerIds.map(
             (id) => _tableCell(
               context,
               Text(
@@ -587,7 +701,7 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
       TableRow(
         children: [
           _tableCell(context, const Text('Σ'), bold: true),
-          ...widget.session.playerIds.map((id) {
+          ...widget.round.playerIds.map((id) {
             final value = totals[id] ?? 0;
             final isWinner = winningValue != null && value == winningValue;
             return _tableCell(
@@ -620,7 +734,7 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
             ),
             padding: EdgeInsets.zero,
           ),
-          ...widget.session.playerIds.map(
+          ...widget.round.playerIds.map(
             (id) => _tableCell(
               context,
               _scoreField(draftControllers, id),
@@ -650,7 +764,7 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
             ),
             padding: const EdgeInsets.symmetric(horizontal: 6),
           ),
-          ...widget.session.playerIds.map(
+          ...widget.round.playerIds.map(
             (id) => _tableCell(
               context,
               isLatest
@@ -715,7 +829,7 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
 
   String _roundNumber(GameRecord round) {
     final rounds = widget.controller.games
-        .where((game) => game.sessionId == widget.session.id)
+        .where((game) => game.roundId == widget.round.id)
         .toList()
       ..sort((first, second) => first.playedAt.compareTo(second.playedAt));
     return '${rounds.indexOf(round) + 1}';
@@ -723,7 +837,7 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
 
   Future<void> _recordRound(int roundNumber) async {
     final scores = <String, int>{};
-    for (final id in widget.session.playerIds) {
+    for (final id in widget.round.playerIds) {
       final text = draftControllers[id]?.text.trim() ?? '';
       final score = int.tryParse(text);
       if (score != null) scores[id] = score;
@@ -731,9 +845,10 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
     await widget.controller.addGame(
       GameRecord(
         id: DateTime.now().microsecondsSinceEpoch.toString(),
+        roundId: widget.round.id,
         sessionId: widget.session.id,
-        gameBlockId: widget.session.gameBlockId,
-        playerIds: widget.session.playerIds,
+        gameBlockId: widget.round.gameBlockId,
+        playerIds: widget.round.playerIds,
         scores: scores,
         playedAt: DateTime.now(),
       ),
@@ -792,7 +907,7 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
       ),
     );
     if (confirmed == true && mounted) {
-      await widget.controller.deleteGameRound(round.id);
+      await widget.controller.deleteGame(round.id);
       if (mounted) setState(() {});
     }
   }
@@ -803,24 +918,17 @@ class NewRoundPage extends StatelessWidget {
     super.key,
     required this.controller,
     required this.session,
+    required this.round,
   });
   final AppController controller;
   final GameSession session;
+  final GameRound round;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Neue Runde')),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text(session.name,
-                style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 12),
-            const Text(
-              'Die Eingabe und Auswertung der Runde wird im nächsten Schritt ergänzt.',
-            ),
-          ],
-        ),
+  Widget build(BuildContext context) => _SubroundTable(
+        controller: controller,
+        session: session,
+        round: round,
       );
 }
 

@@ -8,12 +8,14 @@ class AppController extends ChangeNotifier {
   final AppRepository _repository;
   List<Player> players = const [];
   List<GameRecord> games = const [];
+  List<GameRound> gameRounds = const [];
   List<GameSession> gameSessions = const [];
   bool isLoaded = false;
 
   Future<void> load() async {
     players = await _repository.loadPlayers();
     games = await _repository.loadGames();
+    gameRounds = await _repository.loadGameRounds();
     gameSessions = await _repository.loadGameSessions();
     final usedIds = <String>{};
     final idMapping = <String, String>{};
@@ -46,6 +48,7 @@ class AppController extends ChangeNotifier {
           .map(
             (game) => GameRecord(
               id: game.id,
+              roundId: game.roundId,
               sessionId: game.sessionId,
               gameBlockId: game.gameBlockId,
               playerIds:
@@ -125,16 +128,44 @@ class AppController extends ChangeNotifier {
 
   Future<void> deleteGameSession(String id) async {
     gameSessions = gameSessions.where((session) => session.id != id).toList();
+    gameRounds = gameRounds.where((round) => round.sessionId != id).toList();
     games = games.where((game) => game.sessionId != id).toList();
     await _repository.saveGameSessions(gameSessions);
+    await _repository.saveGameRounds(gameRounds);
     await _repository.saveGames(games);
     notifyListeners();
   }
 
   Future<void> deleteGameRound(String id) async {
+    gameRounds = gameRounds.where((round) => round.id != id).toList();
+    games = games.where((game) => game.roundId != id).toList();
+    await _repository.saveGameRounds(gameRounds);
+    await _repository.saveGames(games);
+    notifyListeners();
+  }
+
+  Future<void> deleteGame(String id) async {
     games = games.where((game) => game.id != id).toList();
     await _repository.saveGames(games);
     notifyListeners();
+  }
+
+  Future<GameRound> addGameRound({
+    required String sessionId,
+    required String gameBlockId,
+    required List<String> playerIds,
+  }) async {
+    final round = GameRound(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      sessionId: sessionId,
+      gameBlockId: gameBlockId,
+      playerIds: playerIds,
+      createdAt: DateTime.now(),
+    );
+    gameRounds = [...gameRounds, round];
+    await _repository.saveGameRounds(gameRounds);
+    notifyListeners();
+    return round;
   }
 
   Future<GameSession> addGameSession({

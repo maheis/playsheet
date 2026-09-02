@@ -33,6 +33,7 @@ class GameBlockDefinition {
 class GameRecord {
   const GameRecord({
     required this.id,
+    this.roundId,
     this.sessionId,
     required this.gameBlockId,
     required this.playerIds,
@@ -40,11 +41,28 @@ class GameRecord {
     required this.playedAt,
   });
   final String id;
+  final String? roundId;
   final String? sessionId;
   final String gameBlockId;
   final List<String> playerIds;
   final Map<String, int> scores;
   final DateTime playedAt;
+}
+
+class GameRound {
+  const GameRound({
+    required this.id,
+    required this.sessionId,
+    required this.gameBlockId,
+    required this.playerIds,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String sessionId;
+  final String gameBlockId;
+  final List<String> playerIds;
+  final DateTime createdAt;
 }
 
 class GameSession {
