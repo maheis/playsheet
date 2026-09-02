@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'app_controller.dart';
 import 'models.dart';
@@ -663,7 +662,8 @@ class _SubroundTableState extends State<_SubroundTable> {
             scrollDirection: Axis.horizontal,
             child: ConstrainedBox(
               constraints: BoxConstraints(minWidth: constraints.maxWidth),
-              child: Center(
+              child: Align(
+                alignment: Alignment.topCenter,
                 child: Table(
                   border: TableBorder(
                     horizontalInside: BorderSide(
@@ -848,16 +848,8 @@ class _SubroundTableState extends State<_SubroundTable> {
       key,
       () => TextEditingController(text: value == null ? '' : '$value'),
     );
-    return TextField(
+    return _CalculatorField(
       controller: controller,
-      textAlign: TextAlign.center,
-      keyboardType: TextInputType.number,
-      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      decoration: const InputDecoration(
-        isDense: true,
-        border: InputBorder.none,
-        contentPadding: EdgeInsets.symmetric(vertical: 8),
-      ),
       onChanged: onChanged,
     );
   }
@@ -1233,6 +1225,280 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
   }
 }
 
+class _CalculatorField extends StatefulWidget {
+  const _CalculatorField({required this.controller, this.onChanged});
+
+  final TextEditingController controller;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  State<_CalculatorField> createState() => _CalculatorFieldState();
+}
+
+class _CalculatorFieldState extends State<_CalculatorField> {
+  Future<void> _openCalculator() async {
+    var expression = widget.controller.text;
+    final result = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => _CalculatorPad(
+        initialExpression: expression,
+        onExpressionChanged: (value) => expression = value,
+      ),
+    );
+    if (!mounted || result == null) return;
+    widget.controller.value = TextEditingValue(
+      text: result,
+      selection: TextSelection.collapsed(offset: result.length),
+    );
+    widget.onChanged?.call(result);
+  }
+
+  @override
+  Widget build(BuildContext context) => TextField(
+        controller: widget.controller,
+        readOnly: true,
+        showCursor: false,
+        textAlign: TextAlign.center,
+        onTap: _openCalculator,
+        decoration: const InputDecoration(
+          isDense: true,
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(vertical: 8),
+        ),
+      );
+}
+
+class _CalculatorPad extends StatefulWidget {
+  const _CalculatorPad({
+    required this.initialExpression,
+    required this.onExpressionChanged,
+  });
+
+  final String initialExpression;
+  final ValueChanged<String> onExpressionChanged;
+
+  @override
+  State<_CalculatorPad> createState() => _CalculatorPadState();
+}
+
+class _CalculatorPadState extends State<_CalculatorPad> {
+  late String expression = widget.initialExpression;
+
+  void _press(String value) {
+    setState(() {
+      if (value == 'AC') {
+        expression = '';
+      } else if (value == '⌫') {
+        if (expression.isNotEmpty) {
+          expression = expression.substring(0, expression.length - 1);
+        }
+      } else if (value == '()') {
+        final opening = '('.allMatches(expression).length;
+        final closing = ')'.allMatches(expression).length;
+        expression += opening > closing ? ')' : '(';
+      } else if (value == '%') {
+        expression += '%';
+      } else {
+        expression += value;
+      }
+      widget.onExpressionChanged(expression);
+    });
+  }
+
+  void _calculate() {
+    final result = _calculateExpression(expression);
+    if (result == null) return;
+    Navigator.pop(context, result);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final buttons = [
+      ('AC', colors.secondaryContainer, colors.onSecondaryContainer),
+      ('()', colors.secondaryContainer, colors.onSecondaryContainer),
+      ('%', colors.secondaryContainer, colors.onSecondaryContainer),
+      ('÷', colors.tertiaryContainer, colors.onTertiaryContainer),
+      ('7', colors.surfaceContainerHighest, colors.onSurface),
+      ('8', colors.surfaceContainerHighest, colors.onSurface),
+      ('9', colors.surfaceContainerHighest, colors.onSurface),
+      ('×', colors.tertiaryContainer, colors.onTertiaryContainer),
+      ('4', colors.surfaceContainerHighest, colors.onSurface),
+      ('5', colors.surfaceContainerHighest, colors.onSurface),
+      ('6', colors.surfaceContainerHighest, colors.onSurface),
+      ('−', colors.tertiaryContainer, colors.onTertiaryContainer),
+      ('1', colors.surfaceContainerHighest, colors.onSurface),
+      ('2', colors.surfaceContainerHighest, colors.onSurface),
+      ('3', colors.surfaceContainerHighest, colors.onSurface),
+      ('+', colors.tertiaryContainer, colors.onTertiaryContainer),
+      ('0', colors.surfaceContainerHighest, colors.onSurface),
+      (',', colors.surfaceContainerHighest, colors.onSurface),
+      ('⌫', colors.surfaceContainerHighest, colors.onSurface),
+      ('=', colors.primary, colors.onPrimary),
+    ];
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                expression.isEmpty ? '0' : expression,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+            ),
+            const SizedBox(height: 12),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 4,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                childAspectRatio: 1.45,
+              ),
+              itemCount: buttons.length,
+              itemBuilder: (context, index) {
+                final button = buttons[index];
+                return _CalculatorButton(
+                  label: button.$1,
+                  backgroundColor: button.$2,
+                  foregroundColor: button.$3,
+                  onPressed:
+                      button.$1 == '=' ? _calculate : () => _press(button.$1),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CalculatorButton extends StatelessWidget {
+  const _CalculatorButton({
+    required this.label,
+    required this.backgroundColor,
+    required this.foregroundColor,
+    required this.onPressed,
+  });
+
+  final String label;
+  final Color backgroundColor;
+  final Color foregroundColor;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => FilledButton(
+        style: FilledButton.styleFrom(
+          backgroundColor: backgroundColor,
+          foregroundColor: foregroundColor,
+          shape: const CircleBorder(),
+          padding: EdgeInsets.zero,
+        ),
+        onPressed: onPressed,
+        child: Text(label, style: const TextStyle(fontSize: 22)),
+      );
+}
+
+num? _calculateExpression(String input) {
+  try {
+    final parser = _ExpressionParser(input);
+    final value = parser.parse();
+    return parser.atEnd ? value : null;
+  } on FormatException {
+    return null;
+  }
+}
+
+class _ExpressionParser {
+  _ExpressionParser(String input) : source = input.replaceAll(',', '.');
+
+  final String source;
+  var position = 0;
+
+  bool get atEnd => position == source.length;
+
+  num parse() {
+    _skipSpaces();
+    if (atEnd) throw const FormatException();
+    final value = _parseExpression();
+    _skipSpaces();
+    if (!atEnd || !value.isFinite) throw const FormatException();
+    return value;
+  }
+
+  num _parseExpression() {
+    var value = _parseTerm();
+    while (true) {
+      _skipSpaces();
+      if (_match('+')) {
+        value += _parseTerm();
+      } else if (_match('-')) {
+        value -= _parseTerm();
+      } else {
+        return value;
+      }
+    }
+  }
+
+  num _parseTerm() {
+    var value = _parseFactor();
+    while (true) {
+      _skipSpaces();
+      if (_match('*') || _match('×')) {
+        value *= _parseFactor();
+      } else if (_match('/') || _match('÷')) {
+        final divisor = _parseFactor();
+        if (divisor == 0) throw const FormatException();
+        value /= divisor;
+      } else {
+        return value;
+      }
+    }
+  }
+
+  num _parseFactor() {
+    _skipSpaces();
+    if (_match('+')) return _parseFactor();
+    if (_match('-')) return -_parseFactor();
+    if (_match('(')) {
+      final value = _parseExpression();
+      if (!_match(')')) throw const FormatException();
+      return _match('%') ? value / 100 : value;
+    }
+    final start = position;
+    while (position < source.length &&
+        RegExp(r'[0-9.]').hasMatch(source[position])) {
+      position++;
+    }
+    if (start == position) throw const FormatException();
+    final value = double.tryParse(source.substring(start, position));
+    if (value == null) throw const FormatException();
+    return _match('%') ? value / 100 : value;
+  }
+
+  bool _match(String character) {
+    if (source.startsWith(character, position)) {
+      position += character.length;
+      return true;
+    }
+    return false;
+  }
+
+  void _skipSpaces() {
+    while (position < source.length && source[position] == ' ') {
+      position++;
+    }
+  }
+}
+
 class ScoreboardPage extends StatefulWidget {
   const ScoreboardPage({
     super.key,
@@ -1249,6 +1515,16 @@ class ScoreboardPage extends StatefulWidget {
 
 class _ScoreboardPageState extends State<ScoreboardPage> {
   final scores = <String, int>{};
+  final scoreControllers = <String, TextEditingController>{};
+
+  @override
+  void dispose() {
+    for (final controller in scoreControllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: Text(widget.block.name)),
@@ -1282,10 +1558,11 @@ class _ScoreboardPageState extends State<ScoreboardPage> {
                       ),
                       SizedBox(
                         width: 110,
-                        child: TextField(
-                          keyboardType: TextInputType.number,
-                          decoration:
-                              const InputDecoration(labelText: 'Punkte'),
+                        child: _CalculatorField(
+                          controller: scoreControllers.putIfAbsent(
+                            id,
+                            TextEditingController.new,
+                          ),
                           onChanged: (value) =>
                               scores[id] = int.tryParse(value) ?? 0,
                         ),
