@@ -528,7 +528,6 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
     return Scaffold(
       appBar: AppBar(title: Text(widget.session.name)),
       body: Scrollbar(
-        thumbVisibility: true,
         child: ListView(
           padding: const EdgeInsets.all(12),
           children: [
@@ -619,6 +618,8 @@ class _SubroundTable extends StatefulWidget {
 class _SubroundTableState extends State<_SubroundTable> {
   final draftControllers = <String, TextEditingController>{};
   final roundControllers = <String, TextEditingController>{};
+  final verticalScrollController = ScrollController();
+  final horizontalScrollController = ScrollController();
   bool editingLatest = false;
 
   @override
@@ -629,6 +630,8 @@ class _SubroundTableState extends State<_SubroundTable> {
     for (final controller in roundControllers.values) {
       controller.dispose();
     }
+    verticalScrollController.dispose();
+    horizontalScrollController.dispose();
     super.dispose();
   }
 
@@ -654,38 +657,49 @@ class _SubroundTableState extends State<_SubroundTable> {
                 .reduce((first, second) => first < second ? first : second);
     return Scaffold(
       appBar: AppBar(title: Text(widget.session.name)),
-      body: Scrollbar(
-        thumbVisibility: true,
-        child: LayoutBuilder(
-          builder: (context, constraints) => SingleChildScrollView(
+      body: LayoutBuilder(
+        builder: (context, constraints) => Scrollbar(
+          controller: verticalScrollController,
+          child: SingleChildScrollView(
+            controller: verticalScrollController,
             padding: const EdgeInsets.all(12),
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: constraints.maxWidth),
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Table(
-                  border: TableBorder(
-                    horizontalInside: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: .6,
-                    ),
-                    verticalInside: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: .6,
+            child: Scrollbar(
+              controller: horizontalScrollController,
+              notificationPredicate: (notification) => notification.depth == 1,
+              child: SingleChildScrollView(
+                controller: horizontalScrollController,
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: Table(
+                      border: TableBorder(
+                        horizontalInside: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                          width: .6,
+                        ),
+                        verticalInside: BorderSide(
+                          color: Theme.of(context).dividerColor,
+                          width: .6,
+                        ),
+                      ),
+                      defaultColumnWidth: const IntrinsicColumnWidth(),
+                      columnWidths: const {0: IntrinsicColumnWidth()},
+                      children: [
+                        _headerRow(context),
+                        _totalsRow(context, totals, winningValue),
+                        _draftRow(context, rounds.length + 1),
+                        ...rounds.reversed.map(
+                          (round) => _roundRow(
+                            context,
+                            round,
+                            rounds.last.id == round.id,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  defaultColumnWidth: const IntrinsicColumnWidth(),
-                  columnWidths: const {0: IntrinsicColumnWidth()},
-                  children: [
-                    _headerRow(context),
-                    _totalsRow(context, totals, winningValue),
-                    _draftRow(context, rounds.length + 1),
-                    ...rounds.reversed.map(
-                      (round) =>
-                          _roundRow(context, round, rounds.last.id == round.id),
-                    ),
-                  ],
                 ),
               ),
             ),
@@ -1241,9 +1255,26 @@ class _CalculatorFieldState extends State<_CalculatorField> {
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.sizeOf(context).width * .25,
+      ),
       builder: (context) => _CalculatorPad(
         initialExpression: expression,
-        onExpressionChanged: (value) => expression = value,
+        onExpressionChanged: (value) {
+          expression = value;
+          final result = _calculateExpression(value);
+          if (value.isEmpty) {
+            widget.controller.clear();
+            widget.onChanged?.call('');
+          } else if (result != null) {
+            final text = _formatCalculatorValue(result);
+            widget.controller.value = TextEditingValue(
+              text: text,
+              selection: TextSelection.collapsed(offset: text.length),
+            );
+            widget.onChanged?.call(text);
+          }
+        },
       ),
     );
     if (!mounted || result == null) return;
@@ -1309,7 +1340,7 @@ class _CalculatorPadState extends State<_CalculatorPad> {
   void _calculate() {
     final result = _calculateExpression(expression);
     if (result == null) return;
-    Navigator.pop(context, result);
+    Navigator.pop(context, _formatCalculatorValue(result));
   }
 
   @override
@@ -1335,11 +1366,15 @@ class _CalculatorPadState extends State<_CalculatorPad> {
       ('0', colors.surfaceContainerHighest, colors.onSurface),
       (',', colors.surfaceContainerHighest, colors.onSurface),
       ('⌫', colors.surfaceContainerHighest, colors.onSurface),
-      ('=', colors.primary, colors.onPrimary),
+      ('↵', colors.primary, colors.onPrimary),
     ];
     return SafeArea(
+      top: false,
+      left: false,
+      right: false,
+      minimum: const EdgeInsets.only(bottom: 2),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+        padding: const EdgeInsets.all(2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1352,15 +1387,15 @@ class _CalculatorPadState extends State<_CalculatorPad> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 2),
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 4,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                childAspectRatio: 1.45,
+                crossAxisSpacing: 2,
+                mainAxisSpacing: 2,
+                childAspectRatio: 1,
               ),
               itemCount: buttons.length,
               itemBuilder: (context, index) {
@@ -1370,7 +1405,13 @@ class _CalculatorPadState extends State<_CalculatorPad> {
                   backgroundColor: button.$2,
                   foregroundColor: button.$3,
                   onPressed:
-                      button.$1 == '=' ? _calculate : () => _press(button.$1),
+                      button.$1 == '↵' ? _calculate : () => _press(button.$1),
+                  child: button.$1 == '↵'
+                      ? const Icon(Icons.keyboard_return_rounded, size: 22)
+                      : Text(
+                          button.$1,
+                          style: const TextStyle(fontSize: 18),
+                        ),
                 );
               },
             ),
@@ -1387,12 +1428,14 @@ class _CalculatorButton extends StatelessWidget {
     required this.backgroundColor,
     required this.foregroundColor,
     required this.onPressed,
+    required this.child,
   });
 
   final String label;
   final Color backgroundColor;
   final Color foregroundColor;
   final VoidCallback onPressed;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) => FilledButton(
@@ -1403,7 +1446,7 @@ class _CalculatorButton extends StatelessWidget {
           padding: EdgeInsets.zero,
         ),
         onPressed: onPressed,
-        child: Text(label, style: const TextStyle(fontSize: 22)),
+        child: child,
       );
 }
 
@@ -1415,6 +1458,11 @@ num? _calculateExpression(String input) {
   } on FormatException {
     return null;
   }
+}
+
+String _formatCalculatorValue(num value) {
+  if (value == value.roundToDouble()) return value.round().toString();
+  return value.toString();
 }
 
 class _ExpressionParser {
@@ -1440,7 +1488,7 @@ class _ExpressionParser {
       _skipSpaces();
       if (_match('+')) {
         value += _parseTerm();
-      } else if (_match('-')) {
+      } else if (_match('-') || _match('−')) {
         value -= _parseTerm();
       } else {
         return value;
@@ -1467,7 +1515,7 @@ class _ExpressionParser {
   num _parseFactor() {
     _skipSpaces();
     if (_match('+')) return _parseFactor();
-    if (_match('-')) return -_parseFactor();
+    if (_match('-') || _match('−')) return -_parseFactor();
     if (_match('(')) {
       final value = _parseExpression();
       if (!_match(')')) throw const FormatException();
