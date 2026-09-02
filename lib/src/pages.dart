@@ -19,6 +19,21 @@ class HomePage extends StatelessWidget {
     animation: controller,
     builder: (context, _) => Scaffold(
       appBar: AppBar(
+        toolbarHeight: 95,
+        leadingWidth: 100,
+        leading: Padding(
+          padding: const EdgeInsets.only(
+            left: 16,
+            top: 16,
+            right: 4,
+            bottom: 4,
+          ),
+          child: Image.asset(
+            'assets/icons/color_transparent_icon.png',
+            width: 75,
+            height: 75,
+          ),
+        ),
         title: const Text('PlaySheet'),
         actions: [
           IconButton(
