@@ -114,6 +114,20 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> deleteGameSession(String id) async {
+    gameSessions = gameSessions.where((session) => session.id != id).toList();
+    games = games.where((game) => game.sessionId != id).toList();
+    await _repository.saveGameSessions(gameSessions);
+    await _repository.saveGames(games);
+    notifyListeners();
+  }
+
+  Future<void> deleteGameRound(String id) async {
+    games = games.where((game) => game.id != id).toList();
+    await _repository.saveGames(games);
+    notifyListeners();
+  }
+
   Future<GameSession> addGameSession({
     required String gameBlockId,
     required String name,

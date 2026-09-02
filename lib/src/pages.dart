@@ -201,7 +201,17 @@ class _GameSessionsPageState extends State<GameSessionsPage> {
                       ),
                     ],
                   ),
-                  trailing: const Icon(Icons.chevron_right_rounded),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'Spiel löschen',
+                        icon: const Icon(Icons.delete_outline_rounded),
+                        onPressed: () => _confirmDeleteGame(context, session),
+                      ),
+                      const Icon(Icons.chevron_right_rounded),
+                    ],
+                  ),
                   onTap: () => _openGame(session),
                 ),
               ),
@@ -217,6 +227,35 @@ class _GameSessionsPageState extends State<GameSessionsPage> {
   String _playerNames(GameSession session) => session.playerIds
       .map((id) => widget.controller.playerById(id)?.name ?? 'Unbekannt')
       .join(', ');
+
+  Future<void> _confirmDeleteGame(
+    BuildContext context,
+    GameSession session,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Spiel löschen?'),
+        content: Text(
+          '„${session.name}“ und alle zugehörigen Runden wirklich löschen?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await widget.controller.deleteGameSession(session.id);
+      if (mounted) setState(() {});
+    }
+  }
 }
 
 class GameSessionConfigPage extends StatefulWidget {
@@ -292,6 +331,47 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
                       player.name.toLowerCase().contains(query),
                 );
               },
+              optionsViewBuilder: (context, onSelected, options) => Align(
+                alignment: Alignment.topLeft,
+                child: Material(
+                  elevation: 4,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 240),
+                    child: ListView.builder(
+                      padding: EdgeInsets.zero,
+                      shrinkWrap: true,
+                      itemCount: options.length,
+                      itemBuilder: (context, index) {
+                        final player = options.elementAt(index);
+                        return ListTile(
+                          leading: const Icon(Icons.person_rounded),
+                          title: Text.rich(
+                            TextSpan(
+                              children: [
+                                TextSpan(text: player.name),
+                                WidgetSpan(
+                                  alignment: PlaceholderAlignment.baseline,
+                                  baseline: TextBaseline.alphabetic,
+                                  child: Transform.translate(
+                                    offset: const Offset(0, 3),
+                                    child: Text(
+                                      ' ${player.id}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          onTap: () => onSelected(player),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ),
               onSelected: (player) {
                 _addPlayer(player);
                 typedPlayerName = '';
@@ -443,12 +523,45 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
                         '${entry.value.playerIds.length} Spieler • '
                         '${entry.value.playedAt.toLocal()}',
                       ),
+                      trailing: IconButton(
+                        tooltip: 'Runde löschen',
+                        icon: const Icon(Icons.delete_outline_rounded),
+                        onPressed: () =>
+                            _confirmDeleteRound(context, entry.value),
+                      ),
                     ),
                   ),
                 ),
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDeleteRound(
+    BuildContext context,
+    GameRecord round,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Runde löschen?'),
+        content: const Text('Diese Runde wirklich unwiderruflich löschen?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await widget.controller.deleteGameRound(round.id);
+      if (mounted) setState(() {});
+    }
   }
 }
 
