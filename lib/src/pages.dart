@@ -1411,35 +1411,62 @@ class _CalculatorField extends StatefulWidget {
 class _CalculatorFieldState extends State<_CalculatorField> {
   Future<void> _openCalculator() async {
     var expression = widget.controller.text;
-    const calculatorMinimumWidth = 622.0;
+    final mediaQuery = MediaQuery.of(context);
+    final availableHeight =
+        mediaQuery.size.height - mediaQuery.padding.bottom - 2;
+    final availableWidth = mediaQuery.size.width;
+    const calculatorFixedHeight = 80.0;
+    const gridVerticalSpacing = 8.0;
+    const gridHorizontalPadding = 10.0;
+    final maxButtonSize = math.max(
+      0,
+      (availableHeight - calculatorFixedHeight - gridVerticalSpacing) / 5,
+    );
+    final calculatorWidth = math
+        .min(
+          availableWidth,
+          maxButtonSize * 4 + gridHorizontalPadding,
+        )
+        .toDouble();
+    final buttonSize = math.max(
+      0,
+      (calculatorWidth - gridHorizontalPadding) / 4,
+    );
+    final calculatorHeight = math
+        .min(
+          availableHeight,
+          calculatorFixedHeight + buttonSize * 5 + gridVerticalSpacing,
+        )
+        .toDouble();
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       constraints: BoxConstraints(
-        minWidth: calculatorMinimumWidth,
-        maxWidth: math.max(
-          MediaQuery.sizeOf(context).width * .25,
-          calculatorMinimumWidth,
-        ),
+        maxWidth: availableWidth,
+        maxHeight: availableHeight,
       ),
-      builder: (context) => _CalculatorPad(
-        initialExpression: expression,
-        allowNegative: widget.allowNegative,
-        onExpressionChanged: (value) {
-          expression = value;
-          final result = _calculateExpression(value);
-          if (value.isEmpty) {
-            widget.controller.clear();
-            widget.onChanged?.call('');
-          } else if (result != null) {
-            final text = _formatCalculatorValue(result);
-            widget.controller.value = TextEditingValue(
-              text: text,
-              selection: TextSelection.collapsed(offset: text.length),
-            );
-            widget.onChanged?.call(text);
-          }
-        },
+      builder: (context) => SizedBox(
+        width: calculatorWidth,
+        height: calculatorHeight,
+        child: _CalculatorPad(
+          initialExpression: expression,
+          allowNegative: widget.allowNegative,
+          onExpressionChanged: (value) {
+            expression = value;
+            final result = _calculateExpression(value);
+            if (value.isEmpty) {
+              widget.controller.clear();
+              widget.onChanged?.call('');
+            } else if (result != null) {
+              final text = _formatCalculatorValue(result);
+              widget.controller.value = TextEditingValue(
+                text: text,
+                selection: TextSelection.collapsed(offset: text.length),
+              );
+              widget.onChanged?.call(text);
+            }
+          },
+        ),
       ),
     );
     if (!mounted || result == null) return;
