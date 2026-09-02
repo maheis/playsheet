@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppSettings {
@@ -56,50 +61,80 @@ class AppSettings {
     bool? useLightTheme,
     int? accentColorValue,
     int? highlightColorValue,
-  }) => AppSettings(
-    fontFamily: fontFamily ?? this.fontFamily,
-    textScaleFactor: textScaleFactor ?? this.textScaleFactor,
-    useLightTheme: useLightTheme ?? this.useLightTheme,
-    accentColorValue: accentColorValue ?? this.accentColorValue,
-    highlightColorValue: highlightColorValue ?? this.highlightColorValue,
-  );
+  }) =>
+      AppSettings(
+        fontFamily: fontFamily ?? this.fontFamily,
+        textScaleFactor: textScaleFactor ?? this.textScaleFactor,
+        useLightTheme: useLightTheme ?? this.useLightTheme,
+        accentColorValue: accentColorValue ?? this.accentColorValue,
+        highlightColorValue: highlightColorValue ?? this.highlightColorValue,
+      );
 }
 
 class SettingsController extends ChangeNotifier {
   SettingsController(this._preferences);
   final SharedPreferences _preferences;
   AppSettings settings = AppSettings.defaults;
-  void load() {
-    settings = AppSettings(
-      fontFamily: _preferences.getString('fontFamily') ?? 'OpenDyslexic',
-      textScaleFactor: (_preferences.getDouble('textScaleFactor') ?? 1).clamp(
-        0.5,
-        1.6,
-      ),
-      useLightTheme: _preferences.getBool('useLightTheme') ?? false,
-      accentColorValue: _validColorValue(
-        _preferences.getInt('accentColorValue'),
-        AppSettings.defaults.accentColorValue,
-      ),
-      highlightColorValue: _validColorValue(
-        _preferences.getInt('highlightColorValue'),
-        AppSettings.defaults.highlightColorValue,
-      ),
-    );
+  late final File _settingsFile;
+
+  Future<void> load() async {
+    final directory = await getApplicationDocumentsDirectory();
+    _settingsFile = File(path.join(directory.path, 'playsheet_settings.json'));
+    final legacy = <String, dynamic>{
+      'fontFamily': _preferences.getString('fontFamily'),
+      'textScaleFactor': _preferences.getDouble('textScaleFactor'),
+      'useLightTheme': _preferences.getBool('useLightTheme'),
+      'accentColorValue': _preferences.getInt('accentColorValue'),
+      'highlightColorValue': _preferences.getInt('highlightColorValue'),
+    };
+    Map<String, dynamic> data = {};
+    if (await _settingsFile.exists()) {
+      try {
+        final decoded = jsonDecode(await _settingsFile.readAsString());
+        if (decoded is Map) data = Map<String, dynamic>.from(decoded);
+      } catch (_) {}
+    }
+    if (data.isEmpty) {
+      data = {
+        for (final entry in legacy.entries)
+          if (entry.value != null) entry.key: entry.value,
+      };
+    }
+    settings = _fromJson(data);
   }
 
   Future<void> update(AppSettings value) async {
     settings = value;
     notifyListeners();
-    await _preferences.setString('fontFamily', value.fontFamily);
-    await _preferences.setDouble('textScaleFactor', value.textScaleFactor);
-    await _preferences.setBool('useLightTheme', value.useLightTheme);
-    await _preferences.setInt('accentColorValue', value.accentColorValue);
-    await _preferences.setInt('highlightColorValue', value.highlightColorValue);
+    await _settingsFile.writeAsString(
+      const JsonEncoder.withIndent('  ').convert(_toJson(value)),
+    );
   }
 
-  int _validColorValue(int? value, int fallback) =>
-      value != null &&
+  AppSettings _fromJson(Map<String, dynamic> data) => AppSettings(
+        fontFamily: data['fontFamily'] as String? ?? 'OpenDyslexic',
+        textScaleFactor: ((data['textScaleFactor'] as num?)?.toDouble() ?? 1)
+            .clamp(0.5, 1.6),
+        useLightTheme: data['useLightTheme'] as bool? ?? false,
+        accentColorValue: _validColorValue(
+          (data['accentColorValue'] as num?)?.toInt(),
+          AppSettings.defaults.accentColorValue,
+        ),
+        highlightColorValue: _validColorValue(
+          (data['highlightColorValue'] as num?)?.toInt(),
+          AppSettings.defaults.highlightColorValue,
+        ),
+      );
+
+  static Map<String, dynamic> _toJson(AppSettings value) => {
+        'fontFamily': value.fontFamily,
+        'textScaleFactor': value.textScaleFactor,
+        'useLightTheme': value.useLightTheme,
+        'accentColorValue': value.accentColorValue,
+        'highlightColorValue': value.highlightColorValue,
+      };
+
+  int _validColorValue(int? value, int fallback) => value != null &&
           AppSettings.availableColors.any((color) => color.toARGB32() == value)
       ? value
       : fallback;

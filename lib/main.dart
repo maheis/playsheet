@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
+import 'package:sembast/sembast_io.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
 
 import 'src/app.dart';
 import 'src/app_controller.dart';
@@ -9,8 +13,17 @@ import 'src/settings.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final preferences = await SharedPreferences.getInstance();
-  final settings = SettingsController(preferences)..load();
-  final controller = AppController(LocalAppRepository(preferences));
+  final settings = SettingsController(preferences);
+  await settings.load();
+  final directory = await getApplicationDocumentsDirectory();
+  final databaseDirectory = Directory(path.join(directory.path, 'playsheet'));
+  await databaseDirectory.create(recursive: true);
+  final database = await databaseFactoryIo.openDatabase(
+    path.join(databaseDirectory.path, 'playsheet.db'),
+  );
+  final controller = AppController(
+    LocalAppRepository(database, legacyPreferences: preferences),
+  );
   await controller.load();
   runApp(PlaySheetApp(controller: controller, settingsController: settings));
 }
@@ -39,7 +52,7 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
@@ -113,7 +126,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
           // action in the IDE, or press "p" in the console), to see the
           // wireframe for each widget.
-          mainAxisAlignment: .center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('You have pushed the button this many times:'),
             Text(
