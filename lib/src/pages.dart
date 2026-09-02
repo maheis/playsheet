@@ -61,10 +61,28 @@ class HomePage extends StatelessWidget {
                     _ActionTile(
                       icon: Icons.looks_3_rounded,
                       title: '1 + 2 = 3',
-                      detail: '${controller.gameSessions.length} Spiele',
+                      detail:
+                          '${_gameCount(controller, 'one_plus_two')} Spiele',
                       onTap: () => pushPage(
                         context,
-                        GameSessionsPage(controller: controller),
+                        GameSessionsPage(
+                          controller: controller,
+                          block: gameBlockFor('one_plus_two'),
+                        ),
+                      ),
+                    ),
+                    _ActionTile(
+                      icon: Icons.exposure_plus_1_rounded,
+                      title: '3 +- 2 = 1',
+                      detail:
+                          '${_gameCount(controller, 'three_plus_minus_two')} '
+                          'Spiele',
+                      onTap: () => pushPage(
+                        context,
+                        GameSessionsPage(
+                          controller: controller,
+                          block: gameBlockFor('three_plus_minus_two'),
+                        ),
                       ),
                     ),
                   ],
@@ -74,6 +92,11 @@ class HomePage extends StatelessWidget {
           ),
         ),
       );
+
+  int _gameCount(AppController controller, String blockId) =>
+      controller.gameSessions
+          .where((session) => session.gameBlockId == blockId)
+          .length;
 }
 
 class _TileGrid extends StatelessWidget {
@@ -142,8 +165,13 @@ class _ActionTile extends StatelessWidget {
 }
 
 class GameSessionsPage extends StatefulWidget {
-  const GameSessionsPage({super.key, required this.controller});
+  const GameSessionsPage({
+    super.key,
+    required this.controller,
+    required this.block,
+  });
   final AppController controller;
+  final GameBlockDefinition block;
 
   @override
   State<GameSessionsPage> createState() => _GameSessionsPageState();
@@ -153,7 +181,10 @@ class _GameSessionsPageState extends State<GameSessionsPage> {
   Future<void> _createGame() async {
     await pushPage(
       context,
-      GameSessionConfigPage(controller: widget.controller),
+      GameSessionConfigPage(
+        controller: widget.controller,
+        block: widget.block,
+      ),
     );
     if (mounted) setState(() {});
   }
@@ -168,7 +199,10 @@ class _GameSessionsPageState extends State<GameSessionsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final sessions = [...widget.controller.gameSessions]..sort((first, second) {
+    final sessions = widget.controller.gameSessions
+        .where((session) => session.gameBlockId == widget.block.id)
+        .toList()
+      ..sort((first, second) {
         final lastPlayedComparison =
             _lastPlayedAt(second).compareTo(_lastPlayedAt(first));
         return lastPlayedComparison != 0
@@ -176,7 +210,7 @@ class _GameSessionsPageState extends State<GameSessionsPage> {
             : second.createdAt.compareTo(first.createdAt);
       });
     return Scaffold(
-      appBar: AppBar(title: const Text('1 + 2 = 3')),
+      appBar: AppBar(title: Text(widget.block.name)),
       body: ListView(
         padding: const EdgeInsets.all(12),
         children: [
@@ -282,8 +316,13 @@ class _GameSessionsPageState extends State<GameSessionsPage> {
 }
 
 class GameSessionConfigPage extends StatefulWidget {
-  const GameSessionConfigPage({super.key, required this.controller});
+  const GameSessionConfigPage({
+    super.key,
+    required this.controller,
+    required this.block,
+  });
   final AppController controller;
+  final GameBlockDefinition block;
 
   @override
   State<GameSessionConfigPage> createState() => _GameSessionConfigPageState();
@@ -312,7 +351,7 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
-          title: const Text('1 + 2 = 3 konfigurieren'),
+          title: Text('${widget.block.name} konfigurieren'),
         ),
         body: ListView(
           padding: const EdgeInsets.all(16),
@@ -488,7 +527,7 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
     if (gameName.isEmpty || selectedPlayerIds.isEmpty) return;
     final updated = GameSession(
       id: session?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
-      gameBlockId: 'one_plus_two',
+      gameBlockId: widget.block.id,
       name: gameName,
       highWins: highWins,
       playerIds: selectedPlayerIds.toList(),

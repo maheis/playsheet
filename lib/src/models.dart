@@ -96,6 +96,13 @@ const gameBlocks = <GameBlockDefinition>[
     color: Color(0xFFE57373),
   ),
   GameBlockDefinition(
+    id: 'three_plus_minus_two',
+    name: '3 +- 2 = 1',
+    description: 'Spielrunden mit positiven und negativen Werten.',
+    icon: Icons.exposure_plus_1_rounded,
+    color: Color(0xFFBA68C8),
+  ),
+  GameBlockDefinition(
     id: 'damjagen',
     name: "Dam'jagen",
     description: 'Punkte und Runden schnell auf dem Spielblock erfassen.',

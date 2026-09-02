@@ -55,8 +55,8 @@ auf derselben Datenbasis aufbauen.
 
 ## Spielstände
 
-- [ ] 1 + 2 = 3
-- [ ] 3 +- 2 = 1
+- [x] 1 + 2 = 3
+- [x] 3 +- 2 = 1
 - [ ] 10Tausend
 - [ ] Strichliste
 - [ ] Dam'jagen
