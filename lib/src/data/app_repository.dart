@@ -17,15 +17,16 @@ class LocalAppRepository implements AppRepository {
 
   @override
   Future<List<Player>> loadPlayers() async =>
-      (_preferences.getStringList('players') ?? const [])
-          .map((value) => jsonDecode(value) as Map<String, dynamic>)
-          .map(
-            (value) => Player(
-              id: value['id'] as String,
-              name: value['name'] as String,
-            ),
-          )
-          .toList();
+      (_preferences.getStringList('players') ?? const []).indexed.map((entry) {
+        final data = jsonDecode(entry.$2) as Map<String, dynamic>;
+        return Player(
+          id: data['id'] as String,
+          name: data['name'] as String,
+          createdAt: data['createdAt'] == null
+              ? DateTime.fromMillisecondsSinceEpoch(entry.$1)
+              : DateTime.parse(data['createdAt'] as String),
+        );
+      }).toList();
 
   @override
   Future<List<GameRecord>> loadGames() async =>
@@ -48,7 +49,13 @@ class LocalAppRepository implements AppRepository {
   Future<void> savePlayers(List<Player> players) => _preferences.setStringList(
     'players',
     players
-        .map((player) => jsonEncode({'id': player.id, 'name': player.name}))
+        .map(
+          (player) => jsonEncode({
+            'id': player.id,
+            'name': player.name,
+            'createdAt': player.createdAt.toIso8601String(),
+          }),
+        )
         .toList(),
   );
 

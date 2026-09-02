@@ -270,14 +270,24 @@ class _NewGamePageState extends State<NewGamePage> {
 }
 
 class AddPlayerPage extends StatefulWidget {
-  const AddPlayerPage({super.key, required this.controller});
+  const AddPlayerPage({super.key, required this.controller, this.player});
   final AppController controller;
+  final Player? player;
   @override
   State<AddPlayerPage> createState() => _AddPlayerPageState();
 }
 
 class _AddPlayerPageState extends State<AddPlayerPage> {
-  final name = TextEditingController();
+  late final TextEditingController name;
+
+  bool get isEditing => widget.player != null;
+
+  @override
+  void initState() {
+    super.initState();
+    name = TextEditingController(text: widget.player?.name ?? '');
+  }
+
   @override
   void dispose() {
     name.dispose();
@@ -286,15 +296,15 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Spieler anlegen')),
+    appBar: AppBar(
+      title: Text(isEditing ? 'Spieler bearbeiten' : 'Spieler anlegen'),
+    ),
     body: Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Ein Spieler bleibt eindeutig und kann in jedem Spiel wiederverwendet werden.',
-          ),
+          const Text('Spieler können in jedem Spiel wiederverwendet werden.'),
           const SizedBox(height: 20),
           TextField(
             controller: name,
@@ -306,18 +316,27 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
           ),
           const Spacer(),
           FilledButton.icon(
-            onPressed: () async {
-              if (name.text.trim().isEmpty) return;
-              await widget.controller.addPlayer(name.text.trim());
-              if (mounted) Navigator.pop(context);
-            },
+            onPressed: _save,
             icon: const Icon(Icons.save_rounded),
-            label: const Text('Spieler speichern'),
+            label: Text(
+              isEditing ? 'Änderungen speichern' : 'Spieler speichern',
+            ),
           ),
         ],
       ),
     ),
   );
+
+  Future<void> _save() async {
+    final playerName = name.text.trim();
+    if (playerName.isEmpty) return;
+    if (isEditing) {
+      await widget.controller.updatePlayer(widget.player!.id, playerName);
+    } else {
+      await widget.controller.addPlayer(playerName);
+    }
+    if (mounted) Navigator.pop(context);
+  }
 }
 
 class ScoreboardPage extends StatefulWidget {
@@ -416,28 +435,86 @@ class PlayersPage extends StatelessWidget {
   final AppController controller;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Spieler')),
-    floatingActionButton: FloatingActionButton.extended(
-      onPressed: () => pushPage(context, AddPlayerPage(controller: controller)),
-      icon: const Icon(Icons.person_add_rounded),
-      label: const Text('Spieler'),
-    ),
-    body: ListView(
-      padding: const EdgeInsets.all(12),
-      children: controller.players
-          .map(
-            (player) => ListTile(
-              leading: const CircleAvatar(child: Icon(Icons.person_rounded)),
-              title: Text(player.name),
-              subtitle: Text(
-                '${controller.games.where((game) => game.playerIds.contains(player.id)).length} Spiele',
+  Widget build(BuildContext context) {
+    final sortedPlayers = [...controller.players]
+      ..sort((first, second) {
+        final firstGames = _gameCount(first);
+        final secondGames = _gameCount(second);
+        final gamesComparison = secondGames.compareTo(firstGames);
+        return gamesComparison != 0
+            ? gamesComparison
+            : first.createdAt.compareTo(second.createdAt);
+      });
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Spieler')),
+      body: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          _ActionTile(
+            icon: Icons.add_rounded,
+            title: 'Spieler hinzufügen',
+            detail: 'Neuen Spieler anlegen',
+            onTap: () =>
+                pushPage(context, AddPlayerPage(controller: controller)),
+          ),
+          const SizedBox(height: 12),
+          ...sortedPlayers.map(
+            (player) => Card(
+              child: ListTile(
+                leading: CircleAvatar(child: Text(player.id)),
+                title: Text(player.name),
+                subtitle: Text('${_gameCount(player)} Spiele'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: 'Spieler bearbeiten',
+                      icon: const Icon(Icons.edit_rounded),
+                      onPressed: () => pushPage(
+                        context,
+                        AddPlayerPage(controller: controller, player: player),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Spieler löschen',
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      onPressed: () => _confirmDelete(context, player),
+                    ),
+                  ],
+                ),
               ),
             ),
-          )
-          .toList(),
-    ),
-  );
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _gameCount(Player player) => controller.games
+      .where((game) => game.playerIds.contains(player.id))
+      .length;
+
+  Future<void> _confirmDelete(BuildContext context, Player player) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Spieler löschen?'),
+        content: Text('„${player.name}“ wirklich löschen?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await controller.deletePlayer(player.id);
+  }
 }
 
 class StatisticsPage extends StatelessWidget {

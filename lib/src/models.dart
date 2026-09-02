@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 class Player {
-  const Player({required this.id, required this.name});
+  const Player({required this.id, required this.name, required this.createdAt});
   final String id;
   final String name;
+  final DateTime createdAt;
 }
 
 class GameBlockDefinition {

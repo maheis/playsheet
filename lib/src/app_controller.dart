@@ -13,15 +13,83 @@ class AppController extends ChangeNotifier {
   Future<void> load() async {
     players = await _repository.loadPlayers();
     games = await _repository.loadGames();
+    final usedIds = <String>{};
+    final idMapping = <String, String>{};
+    var nextId = 1;
+    players = [
+      for (final player in players)
+        () {
+          final oldId = player.id;
+          var newId = int.tryParse(oldId);
+          if (newId == null || newId < 1 || usedIds.contains(oldId)) {
+            while (usedIds.contains('$nextId')) {
+              nextId++;
+            }
+            newId = nextId++;
+          }
+          final normalizedId = '$newId';
+          usedIds.add(normalizedId);
+          idMapping.putIfAbsent(oldId, () => normalizedId);
+          return Player(
+            id: normalizedId,
+            name: player.name,
+            createdAt: player.createdAt,
+          );
+        }(),
+    ];
+    if (idMapping.entries.any((entry) => entry.key != entry.value)) {
+      games = games
+          .map(
+            (game) => GameRecord(
+              id: game.id,
+              gameBlockId: game.gameBlockId,
+              playerIds: game.playerIds
+                  .map((id) => idMapping[id] ?? id)
+                  .toList(),
+              scores: {
+                for (final entry in game.scores.entries)
+                  idMapping[entry.key] ?? entry.key: entry.value,
+              },
+              playedAt: game.playedAt,
+            ),
+          )
+          .toList();
+      await _repository.savePlayers(players);
+      await _repository.saveGames(games);
+    }
     isLoaded = true;
     notifyListeners();
   }
 
   Future<void> addPlayer(String name) async {
+    final nextId =
+        players.fold<int>(0, (highest, player) {
+          final id = int.tryParse(player.id) ?? 0;
+          return id > highest ? id : highest;
+        }) +
+        1;
     players = [
       ...players,
-      Player(id: DateTime.now().microsecondsSinceEpoch.toString(), name: name),
+      Player(id: '$nextId', name: name, createdAt: DateTime.now()),
     ];
+    await _repository.savePlayers(players);
+    notifyListeners();
+  }
+
+  Future<void> updatePlayer(String id, String name) async {
+    players = [
+      for (final player in players)
+        if (player.id == id)
+          Player(id: id, name: name, createdAt: player.createdAt)
+        else
+          player,
+    ];
+    await _repository.savePlayers(players);
+    notifyListeners();
+  }
+
+  Future<void> deletePlayer(String id) async {
+    players = players.where((player) => player.id != id).toList();
     await _repository.savePlayers(players);
     notifyListeners();
   }
