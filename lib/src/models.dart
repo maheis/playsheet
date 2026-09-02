@@ -33,19 +33,46 @@ class GameBlockDefinition {
 class GameRecord {
   const GameRecord({
     required this.id,
+    this.sessionId,
     required this.gameBlockId,
     required this.playerIds,
     required this.scores,
     required this.playedAt,
   });
   final String id;
+  final String? sessionId;
   final String gameBlockId;
   final List<String> playerIds;
   final Map<String, int> scores;
   final DateTime playedAt;
 }
 
+class GameSession {
+  const GameSession({
+    required this.id,
+    required this.gameBlockId,
+    required this.name,
+    required this.highWins,
+    required this.playerIds,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String gameBlockId;
+  final String name;
+  final bool highWins;
+  final List<String> playerIds;
+  final DateTime createdAt;
+}
+
 const gameBlocks = <GameBlockDefinition>[
+  GameBlockDefinition(
+    id: 'one_plus_two',
+    name: '1 + 2 = 3',
+    description: 'Spielrunden mit Hoch- oder Tiefwertung.',
+    icon: Icons.looks_3_rounded,
+    color: Color(0xFFE57373),
+  ),
   GameBlockDefinition(
     id: 'damjagen',
     name: "Dam'jagen",
@@ -77,6 +104,6 @@ const gameBlocks = <GameBlockDefinition>[
 ];
 
 GameBlockDefinition gameBlockFor(String id) => gameBlocks.firstWhere(
-  (block) => block.id == id,
-  orElse: () => gameBlocks.first,
-);
+      (block) => block.id == id,
+      orElse: () => gameBlocks.first,
+    );

@@ -8,8 +8,10 @@ import '../models.dart';
 abstract interface class AppRepository {
   Future<List<Player>> loadPlayers();
   Future<List<GameRecord>> loadGames();
+  Future<List<GameSession>> loadGameSessions();
   Future<void> savePlayers(List<Player> players);
   Future<void> saveGames(List<GameRecord> games);
+  Future<void> saveGameSessions(List<GameSession> sessions);
 }
 
 class LocalAppRepository implements AppRepository {
@@ -19,6 +21,7 @@ class LocalAppRepository implements AppRepository {
   final SharedPreferences? _legacyPreferences;
   final _playersStore = stringMapStoreFactory.store('players');
   final _gamesStore = stringMapStoreFactory.store('games');
+  final _gameSessionsStore = stringMapStoreFactory.store('game_sessions');
 
   Map<String, dynamic> _playerData(Player player) => {
         'id': player.id,
@@ -41,6 +44,7 @@ class LocalAppRepository implements AppRepository {
 
   Map<String, dynamic> _gameData(GameRecord game) => {
         'id': game.id,
+        'sessionId': game.sessionId,
         'gameBlockId': game.gameBlockId,
         'playerIds': game.playerIds,
         'scores': game.scores,
@@ -49,6 +53,7 @@ class LocalAppRepository implements AppRepository {
 
   GameRecord _gameFromData(Map<String, dynamic> data) => GameRecord(
         id: data['id'] as String,
+        sessionId: data['sessionId'] as String?,
         gameBlockId: data['gameBlockId'] as String,
         playerIds: List<String>.from(data['playerIds'] as List<dynamic>),
         scores: Map<String, int>.from(
@@ -57,6 +62,24 @@ class LocalAppRepository implements AppRepository {
           ),
         ),
         playedAt: DateTime.parse(data['playedAt'] as String),
+      );
+
+  Map<String, dynamic> _gameSessionData(GameSession session) => {
+        'id': session.id,
+        'gameBlockId': session.gameBlockId,
+        'name': session.name,
+        'highWins': session.highWins,
+        'playerIds': session.playerIds,
+        'createdAt': session.createdAt.toIso8601String(),
+      };
+
+  GameSession _gameSessionFromData(Map<String, dynamic> data) => GameSession(
+        id: data['id'] as String,
+        gameBlockId: data['gameBlockId'] as String,
+        name: data['name'] as String,
+        highWins: data['highWins'] as bool,
+        playerIds: List<String>.from(data['playerIds'] as List<dynamic>),
+        createdAt: DateTime.parse(data['createdAt'] as String),
       );
 
   @override
@@ -109,6 +132,24 @@ class LocalAppRepository implements AppRepository {
       await _gamesStore.delete(transaction);
       for (final game in games) {
         await _gamesStore.record(game.id).put(transaction, _gameData(game));
+      }
+    });
+  }
+
+  @override
+  Future<List<GameSession>> loadGameSessions() async =>
+      (await _gameSessionsStore.find(_database))
+          .map((record) => _gameSessionFromData(record.value))
+          .toList();
+
+  @override
+  Future<void> saveGameSessions(List<GameSession> sessions) async {
+    await _database.transaction((transaction) async {
+      await _gameSessionsStore.delete(transaction);
+      for (final session in sessions) {
+        await _gameSessionsStore
+            .record(session.id)
+            .put(transaction, _gameSessionData(session));
       }
     });
   }

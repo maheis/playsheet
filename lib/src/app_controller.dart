@@ -8,11 +8,13 @@ class AppController extends ChangeNotifier {
   final AppRepository _repository;
   List<Player> players = const [];
   List<GameRecord> games = const [];
+  List<GameSession> gameSessions = const [];
   bool isLoaded = false;
 
   Future<void> load() async {
     players = await _repository.loadPlayers();
     games = await _repository.loadGames();
+    gameSessions = await _repository.loadGameSessions();
     final usedIds = <String>{};
     final idMapping = <String, String>{};
     var nextId = 1;
@@ -44,10 +46,10 @@ class AppController extends ChangeNotifier {
           .map(
             (game) => GameRecord(
               id: game.id,
+              sessionId: game.sessionId,
               gameBlockId: game.gameBlockId,
-              playerIds: game.playerIds
-                  .map((id) => idMapping[id] ?? id)
-                  .toList(),
+              playerIds:
+                  game.playerIds.map((id) => idMapping[id] ?? id).toList(),
               scores: {
                 for (final entry in game.scores.entries)
                   idMapping[entry.key] ?? entry.key: entry.value,
@@ -64,8 +66,7 @@ class AppController extends ChangeNotifier {
   }
 
   Future<Player> addPlayer(String name) async {
-    final nextId =
-        players.fold<int>(0, (highest, player) {
+    final nextId = players.fold<int>(0, (highest, player) {
           final id = int.tryParse(player.id) ?? 0;
           return id > highest ? id : highest;
         }) +
@@ -111,6 +112,26 @@ class AppController extends ChangeNotifier {
     games = [...games, game];
     await _repository.saveGames(games);
     notifyListeners();
+  }
+
+  Future<GameSession> addGameSession({
+    required String gameBlockId,
+    required String name,
+    required bool highWins,
+    required List<String> playerIds,
+  }) async {
+    final session = GameSession(
+      id: DateTime.now().microsecondsSinceEpoch.toString(),
+      gameBlockId: gameBlockId,
+      name: name,
+      highWins: highWins,
+      playerIds: playerIds,
+      createdAt: DateTime.now(),
+    );
+    gameSessions = [...gameSessions, session];
+    await _repository.saveGameSessions(gameSessions);
+    notifyListeners();
+    return session;
   }
 
   Player? playerById(String id) =>

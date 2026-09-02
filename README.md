@@ -13,15 +13,19 @@ Typografie, Farben und Einstellungen an VolleyAce und SimplePresent. Der
 Standard bleibt dunkel, Material 3 wird verwendet und die globale Darstellung
 ist über Settings anpassbar.
 
-Der aktuelle Grundumfang ist bewusst auf Spieler und Einstellungen reduziert:
+Der aktuelle Grundumfang umfasst Spieler, Einstellungen und den ersten Spielblock
+`1 + 2 = 3` bis zur Rundenübersicht:
 
 - Dashboard mit Spieleranzahl
 - eindeutige, lokal gespeicherte Spieler zur Wiederverwendung
 - globale Settings für Theme, Schriftart und Textskalierung
 - lokales Repository als austauschbare Basis für spätere Cloud-Synchronisierung
+- gespeicherte `1 + 2 = 3`-Spiele mit Name, Gewinnart und Spielerauswahl
+- Rundenübersicht mit Einstieg in eine neue Runde
 
-Die Spielblöcke, Spielstände und Statistiken bleiben als technische Grundlage
-vorbereitet, sind im Dashboard aber vorerst nicht aktiviert.
+Die genaue Spielanleitung sowie Punkte- und Auswertungslogik von `1 + 2 = 3` folgen
+im nächsten Umsetzungsschritt. Die übrigen Spielblöcke und Statistiken bleiben
+als technische Grundlage vorbereitet.
 
 ### Modularer Spielblock
 
@@ -53,7 +57,7 @@ auf derselben Datenbasis aufbauen.
 
 - [ ] Dam'jagen
 - [ ] 10Tausend
-- [ ] 1+2=3
+- [ ] 1 + 2 = 3
 - [ ] 3+-2=1
 - [ ] Strichliste
 - [ ] Würfelblock
