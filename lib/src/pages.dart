@@ -57,8 +57,7 @@ class HomePage extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           LayoutBuilder(
-            builder: (context, constraints) => _TileGrid(
-              constraints: constraints,
+            builder: (context, _) => _TileGrid(
               children: [
                 _ActionTile(
                   icon: Icons.people_alt_rounded,
@@ -80,8 +79,7 @@ class HomePage extends StatelessWidget {
           const SizedBox(height: 28),
           const _SectionTitle('Spielblöcke'),
           LayoutBuilder(
-            builder: (context, constraints) => _TileGrid(
-              constraints: constraints,
+            builder: (context, _) => _TileGrid(
               children: [
                 _ActionTile(
                   icon: Icons.add_rounded,
@@ -105,8 +103,7 @@ class HomePage extends StatelessWidget {
           const SizedBox(height: 20),
           const _SectionTitle('Auswertung'),
           LayoutBuilder(
-            builder: (context, constraints) => _TileGrid(
-              constraints: constraints,
+            builder: (context, _) => _TileGrid(
               children: [
                 _ActionTile(
                   icon: Icons.insights_rounded,
@@ -125,22 +122,15 @@ class HomePage extends StatelessWidget {
 }
 
 class _TileGrid extends StatelessWidget {
-  const _TileGrid({required this.constraints, required this.children});
-  final BoxConstraints constraints;
+  const _TileGrid({required this.children});
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    final crossAxisCount = constraints.maxWidth >= 980
-        ? 4
-        : constraints.maxWidth >= 560
-        ? 2
-        : 1;
     return GridView.count(
-      crossAxisCount: crossAxisCount,
-      crossAxisSpacing: 12,
+      crossAxisCount: 1,
       mainAxisSpacing: 12,
-      childAspectRatio: crossAxisCount == 1 ? 3.2 : 1.55,
+      mainAxisExtent: 72,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       children: children,
@@ -166,7 +156,7 @@ class _ActionTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Row(
           children: [
             Icon(
@@ -217,7 +207,7 @@ class _GameBlockTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Row(
           children: [
             CircleAvatar(
