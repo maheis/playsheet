@@ -532,8 +532,8 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
         children: [
           _ActionTile(
             icon: Icons.add_rounded,
-            title: 'Neue Spielrunde',
-            detail: 'Eine neue Spielrunde beginnen',
+            title: 'Neuer Durchgang',
+            detail: 'Einen weiteren Durchgang beginnen',
             onTap: _newRound,
           ),
           const SizedBox(height: 12),
@@ -541,13 +541,13 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
                 (entry) => Card(
                   child: ListTile(
                     leading: CircleAvatar(child: Text('${entry.key + 1}')),
-                    title: Text('Spielrunde ${entry.key + 1}'),
+                    title: Text('Durchgang ${entry.key + 1}'),
                     subtitle: Text(
                       '${entry.value.playerIds.length} Spieler • '
-                      '${_subroundCount(entry.value)} Subrunden',
+                      '${_subroundCount(entry.value)} Spielrunden',
                     ),
                     trailing: IconButton(
-                      tooltip: 'Spielrunde löschen',
+                      tooltip: 'Durchgang löschen',
                       icon: const Icon(Icons.delete_outline_rounded),
                       onPressed: () =>
                           _confirmDeleteRound(context, entry.value),
@@ -578,8 +578,8 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Spielrunde löschen?'),
-        content: const Text('Diese Spielrunde und ihre Subrunden löschen?'),
+        title: const Text('Durchgang löschen?'),
+        content: const Text('Diesen Durchgang und seine Spielrunden löschen?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
@@ -764,7 +764,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                   IconButton(
                     tooltip: editingLatest
                         ? 'Bearbeiten beenden'
-                        : 'Letzte Subrunde bearbeiten',
+                        : 'Letzte Spielrunde bearbeiten',
                     icon: Icon(
                       editingLatest ? Icons.check_rounded : Icons.edit_outlined,
                       size: 18,
@@ -775,7 +775,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                   ),
                 if (isLatest)
                   IconButton(
-                    tooltip: 'Runde löschen',
+                    tooltip: 'Spielrunde löschen',
                     icon: const Icon(Icons.delete_outline_rounded, size: 18),
                     padding: EdgeInsets.zero,
                     onPressed: () => _confirmDeleteRound(context, round),
@@ -913,8 +913,9 @@ class _SubroundTableState extends State<_SubroundTable> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Runde löschen?'),
-        content: const Text('Diese Runde wirklich unwiderruflich löschen?'),
+        title: const Text('Spielrunde löschen?'),
+        content:
+            const Text('Diese Spielrunde wirklich unwiderruflich löschen?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
