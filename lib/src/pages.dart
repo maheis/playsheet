@@ -268,6 +268,7 @@ class GameSessionConfigPage extends StatefulWidget {
 
 class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
   late final TextEditingController name;
+  TextEditingController? playerNameFieldController;
   String typedPlayerName = '';
   bool highWins = true;
   final selectedPlayerIds = <String>{};
@@ -379,10 +380,12 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
               ),
               onSelected: (player) {
                 _addPlayer(player);
+                playerNameFieldController?.clear();
                 typedPlayerName = '';
               },
               fieldViewBuilder:
                   (context, fieldController, focusNode, onSubmitted) {
+                playerNameFieldController = fieldController;
                 return TextField(
                   controller: fieldController,
                   focusNode: focusNode,
