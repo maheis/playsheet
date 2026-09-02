@@ -528,43 +528,46 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
       ..sort((first, second) => second.createdAt.compareTo(first.createdAt));
     return Scaffold(
       appBar: AppBar(title: Text(widget.session.name)),
-      body: ListView(
-        padding: const EdgeInsets.all(12),
-        children: [
-          _ActionTile(
-            icon: Icons.add_rounded,
-            title: 'Neuer Durchgang',
-            detail: 'Einen weiteren Durchgang beginnen',
-            onTap: _newRound,
-          ),
-          const SizedBox(height: 12),
-          ...rounds.asMap().entries.map(
-                (entry) => Card(
-                  child: ListTile(
-                    leading: CircleAvatar(child: Text('${entry.key + 1}')),
-                    title: Text('Durchgang ${entry.key + 1}'),
-                    subtitle: Text(
-                      '${entry.value.playerIds.length} Spieler • '
-                      '${_subroundCount(entry.value)} Spielrunden',
-                    ),
-                    trailing: IconButton(
-                      tooltip: 'Durchgang löschen',
-                      icon: const Icon(Icons.delete_outline_rounded),
-                      onPressed: () =>
-                          _confirmDeleteRound(context, entry.value),
-                    ),
-                    onTap: () => pushPage(
-                      context,
-                      _SubroundTable(
-                        controller: widget.controller,
-                        session: widget.session,
-                        round: entry.value,
+      body: Scrollbar(
+        thumbVisibility: true,
+        child: ListView(
+          padding: const EdgeInsets.all(12),
+          children: [
+            _ActionTile(
+              icon: Icons.add_rounded,
+              title: 'Neuer Durchgang',
+              detail: 'Einen weiteren Durchgang beginnen',
+              onTap: _newRound,
+            ),
+            const SizedBox(height: 12),
+            ...rounds.asMap().entries.map(
+                  (entry) => Card(
+                    child: ListTile(
+                      leading: CircleAvatar(child: Text('${entry.key + 1}')),
+                      title: Text('Durchgang ${entry.key + 1}'),
+                      subtitle: Text(
+                        '${entry.value.playerIds.length} Spieler • '
+                        '${_subroundCount(entry.value)} Spielrunden',
+                      ),
+                      trailing: IconButton(
+                        tooltip: 'Durchgang löschen',
+                        icon: const Icon(Icons.delete_outline_rounded),
+                        onPressed: () =>
+                            _confirmDeleteRound(context, entry.value),
+                      ),
+                      onTap: () => pushPage(
+                        context,
+                        _SubroundTable(
+                          controller: widget.controller,
+                          session: widget.session,
+                          round: entry.value,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -653,31 +656,39 @@ class _SubroundTableState extends State<_SubroundTable> {
     return Scaffold(
       appBar: AppBar(title: Text(widget.session.name)),
       body: Scrollbar(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(12),
-          scrollDirection: Axis.horizontal,
-          child: Table(
-            border: TableBorder(
-              horizontalInside: BorderSide(
-                color: Theme.of(context).dividerColor,
-                width: .6,
-              ),
-              verticalInside: BorderSide(
-                color: Theme.of(context).dividerColor,
-                width: .6,
+        thumbVisibility: true,
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.all(12),
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: Center(
+                child: Table(
+                  border: TableBorder(
+                    horizontalInside: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: .6,
+                    ),
+                    verticalInside: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: .6,
+                    ),
+                  ),
+                  defaultColumnWidth: const IntrinsicColumnWidth(),
+                  columnWidths: const {0: IntrinsicColumnWidth()},
+                  children: [
+                    _headerRow(context),
+                    _totalsRow(context, totals, winningValue),
+                    _draftRow(context, rounds.length + 1),
+                    ...rounds.reversed.map(
+                      (round) =>
+                          _roundRow(context, round, rounds.last.id == round.id),
+                    ),
+                  ],
+                ),
               ),
             ),
-            defaultColumnWidth: const IntrinsicColumnWidth(),
-            columnWidths: const {0: IntrinsicColumnWidth()},
-            children: [
-              _headerRow(context),
-              _totalsRow(context, totals, winningValue),
-              _draftRow(context, rounds.length + 1),
-              ...rounds.reversed.map(
-                (round) =>
-                    _roundRow(context, round, rounds.last.id == round.id),
-              ),
-            ],
           ),
         ),
       ),
@@ -815,12 +826,15 @@ class _SubroundTableState extends State<_SubroundTable> {
     bool bold = false,
     EdgeInsetsGeometry? padding,
   }) =>
-      Padding(
-        padding:
-            padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-        child: DefaultTextStyle.merge(
-          style: TextStyle(fontWeight: bold ? FontWeight.bold : null),
-          child: child,
+      ConstrainedBox(
+        constraints: const BoxConstraints(minHeight: 48),
+        child: Padding(
+          padding:
+              padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: DefaultTextStyle.merge(
+            style: TextStyle(fontWeight: bold ? FontWeight.bold : null),
+            child: child,
+          ),
         ),
       );
 
