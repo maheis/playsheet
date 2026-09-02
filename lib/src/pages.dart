@@ -30,7 +30,6 @@ class HomePage extends StatelessWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
         children: [
           Text(
             'Dein Spielblock',
@@ -42,56 +41,67 @@ class HomePage extends StatelessWidget {
             'Ergebnisse festhalten. Spieler wiederverwenden. Statistiken entdecken.',
           ),
           const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: () =>
-                pushPage(context, NewGamePage(controller: controller)),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Neues Spiel starten'),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _Summary(
-                  label: 'Spieler',
-                  value: '${controller.players.length}',
+          LayoutBuilder(
+            builder: (context, constraints) => _TileGrid(
+              constraints: constraints,
+              children: [
+                _ActionTile(
                   icon: Icons.people_alt_rounded,
+                  title: 'Spieler',
+                  detail: '${controller.players.length} angelegt',
                   onTap: () =>
                       pushPage(context, PlayersPage(controller: controller)),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _Summary(
-                  label: 'Spiele',
-                  value: '${controller.games.length}',
+                _ActionTile(
                   icon: Icons.sports_score_rounded,
+                  title: 'Spiele',
+                  detail: '${controller.games.length} gespeichert',
                   onTap: () =>
                       pushPage(context, StatisticsPage(controller: controller)),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 28),
           const _SectionTitle('Spielblöcke'),
-          ...gameBlocks.map(
-            (block) => _GameBlockTile(
-              block: block,
-              onTap: () => pushPage(
-                context,
-                NewGamePage(controller: controller, initialBlock: block),
-              ),
+          LayoutBuilder(
+            builder: (context, constraints) => _TileGrid(
+              constraints: constraints,
+              children: [
+                _ActionTile(
+                  icon: Icons.add_rounded,
+                  title: 'Neues Spiel',
+                  detail: 'Spielblock auswählen',
+                  onTap: () =>
+                      pushPage(context, NewGamePage(controller: controller)),
+                ),
+                ...gameBlocks.map(
+                  (block) => _GameBlockTile(
+                    block: block,
+                    onTap: () => pushPage(
+                      context,
+                      NewGamePage(controller: controller, initialBlock: block),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 20),
           const _SectionTitle('Auswertung'),
-          ListTile(
-            leading: const Icon(Icons.insights_rounded),
-            title: const Text('Gesamtstatistik'),
-            subtitle: const Text('Vergleiche Spieler und Spielverläufe'),
-            trailing: const Icon(Icons.chevron_right_rounded),
-            onTap: () =>
-                pushPage(context, StatisticsPage(controller: controller)),
+          LayoutBuilder(
+            builder: (context, constraints) => _TileGrid(
+              constraints: constraints,
+              children: [
+                _ActionTile(
+                  icon: Icons.insights_rounded,
+                  title: 'Gesamtstatistik',
+                  detail: 'Spieler und Verläufe vergleichen',
+                  onTap: () =>
+                      pushPage(context, StatisticsPage(controller: controller)),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -99,16 +109,42 @@ class HomePage extends StatelessWidget {
   );
 }
 
-class _Summary extends StatelessWidget {
-  const _Summary({
-    required this.label,
-    required this.value,
+class _TileGrid extends StatelessWidget {
+  const _TileGrid({required this.constraints, required this.children});
+  final BoxConstraints constraints;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final crossAxisCount = constraints.maxWidth >= 980
+        ? 4
+        : constraints.maxWidth >= 560
+        ? 2
+        : 1;
+    return GridView.count(
+      crossAxisCount: crossAxisCount,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: crossAxisCount == 1 ? 3.2 : 1.55,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      children: children,
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({
     required this.icon,
+    required this.title,
+    required this.detail,
     required this.onTap,
   });
-  final String label, value;
   final IconData icon;
+  final String title;
+  final String detail;
   final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) => Card(
     child: InkWell(
@@ -116,17 +152,25 @@ class _Summary extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Icon(icon, color: Theme.of(context).colorScheme.secondary),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: Theme.of(context).textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
+            Icon(
+              icon,
+              size: 32,
+              color: Theme.of(context).colorScheme.secondary,
             ),
-            Text(label),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.titleMedium),
+                  Text(detail, maxLines: 2, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded),
           ],
         ),
       ),
@@ -154,16 +198,40 @@ class _GameBlockTile extends StatelessWidget {
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => Card(
-    child: ListTile(
+    child: InkWell(
       onTap: onTap,
-      leading: CircleAvatar(
-        backgroundColor: block.color,
-        foregroundColor: Colors.black,
-        child: Icon(block.icon),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundColor: block.color,
+              foregroundColor: Colors.black,
+              child: Icon(block.icon),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    block.name,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    block.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded),
+          ],
+        ),
       ),
-      title: Text(block.name),
-      subtitle: Text(block.description),
-      trailing: const Icon(Icons.chevron_right_rounded),
     ),
   );
 }
