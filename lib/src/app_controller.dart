@@ -148,6 +148,15 @@ class AppController extends ChangeNotifier {
     return session;
   }
 
+  Future<void> updateGameSession(GameSession session) async {
+    gameSessions = [
+      for (final current in gameSessions)
+        if (current.id == session.id) session else current,
+    ];
+    await _repository.saveGameSessions(gameSessions);
+    notifyListeners();
+  }
+
   Player? playerById(String id) =>
       players.where((player) => player.id == id).firstOrNull;
 }

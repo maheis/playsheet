@@ -271,6 +271,7 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
   String typedPlayerName = '';
   bool highWins = true;
   final selectedPlayerIds = <String>{};
+  GameSession? session;
 
   @override
   void initState() {
@@ -288,9 +289,6 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('1 + 2 = 3 konfigurieren'),
-          actions: [
-            TextButton(onPressed: _save, child: const Text('Speichern')),
-          ],
         ),
         body: ListView(
           padding: const EdgeInsets.all(16),
@@ -298,6 +296,7 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
             TextField(
               controller: name,
               autofocus: true,
+              onChanged: (_) => _persistConfiguration(),
               decoration: const InputDecoration(
                 labelText: 'Name',
                 hintText: 'z. B. Spieleabend',
@@ -310,13 +309,19 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
               value: true,
               groupValue: highWins,
               title: const Text('Hoch gewinnt'),
-              onChanged: (value) => setState(() => highWins = value ?? true),
+              onChanged: (value) {
+                setState(() => highWins = value ?? true);
+                _persistConfiguration();
+              },
             ),
             RadioListTile<bool>(
               value: false,
               groupValue: highWins,
               title: const Text('Tief gewinnt'),
-              onChanged: (value) => setState(() => highWins = value ?? true),
+              onChanged: (value) {
+                setState(() => highWins = value ?? true);
+                _persistConfiguration();
+              },
             ),
             const SizedBox(height: 12),
             Text('Spieler', style: Theme.of(context).textTheme.titleMedium),
@@ -403,8 +408,10 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
                     InputChip(
                       avatar: const Icon(Icons.person_rounded, size: 18),
                       label: Text(player.name),
-                      onDeleted: () =>
-                          setState(() => selectedPlayerIds.remove(id)),
+                      onDeleted: () {
+                        setState(() => selectedPlayerIds.remove(id));
+                        _persistConfiguration();
+                      },
                     ),
               ],
             ),
@@ -418,7 +425,10 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
       );
 
   void _addPlayer(Player player) {
-    if (selectedPlayerIds.add(player.id)) setState(() {});
+    if (selectedPlayerIds.add(player.id)) {
+      setState(() {});
+      _persistConfiguration();
+    }
   }
 
   Future<void> _addTypedPlayer(TextEditingController fieldController) async {
@@ -436,7 +446,7 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
     typedPlayerName = '';
   }
 
-  Future<void> _save() async {
+  Future<void> _persistConfiguration() async {
     if (typedPlayerName.trim().isNotEmpty) {
       final playerName = typedPlayerName.trim();
       final existing = widget.controller.players.where(
@@ -450,19 +460,25 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
     }
     final gameName = name.text.trim();
     if (gameName.isEmpty || selectedPlayerIds.isEmpty) return;
-    final session = await widget.controller.addGameSession(
+    final updated = GameSession(
+      id: session?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
       gameBlockId: 'one_plus_two',
       name: gameName,
       highWins: highWins,
       playerIds: selectedPlayerIds.toList(),
+      createdAt: session?.createdAt ?? DateTime.now(),
     );
-    if (!mounted) return;
-    await Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(
-        builder: (_) =>
-            GameRoundsPage(controller: widget.controller, session: session),
-      ),
-    );
+    if (session == null) {
+      session = await widget.controller.addGameSession(
+        gameBlockId: updated.gameBlockId,
+        name: updated.name,
+        highWins: updated.highWins,
+        playerIds: updated.playerIds,
+      );
+    } else {
+      session = updated;
+      await widget.controller.updateGameSession(updated);
+    }
   }
 }
 
@@ -873,16 +889,7 @@ class _ScoreboardPageState extends State<ScoreboardPage> {
   final scores = <String, int>{};
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-          title: Text(widget.block.name),
-          actions: [
-            IconButton(
-              tooltip: 'Runde speichern',
-              icon: const Icon(Icons.save_rounded),
-              onPressed: _save,
-            ),
-          ],
-        ),
+        appBar: AppBar(title: Text(widget.block.name)),
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -935,18 +942,6 @@ class _ScoreboardPageState extends State<ScoreboardPage> {
           ],
         ),
       );
-  void _save() async {
-    await widget.controller.addGame(
-      GameRecord(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
-        gameBlockId: widget.block.id,
-        playerIds: widget.playerIds,
-        scores: scores,
-        playedAt: DateTime.now(),
-      ),
-    );
-    if (mounted) Navigator.popUntil(context, (route) => route.isFirst);
-  }
 }
 
 class _PlayerColorPicker extends StatelessWidget {
@@ -1174,15 +1169,6 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   late AppSettings draft;
 
-  bool get _hasChanges {
-    final current = widget.controller.settings;
-    return draft.fontFamily != current.fontFamily ||
-        draft.textScaleFactor != current.textScaleFactor ||
-        draft.useLightTheme != current.useLightTheme ||
-        draft.accentColorValue != current.accentColorValue ||
-        draft.highlightColorValue != current.highlightColorValue;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -1193,20 +1179,6 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(
           title: const Text('Einstellungen'),
-          actions: [
-            TextButton(
-              onPressed: _save,
-              child: Text(
-                'Speichern',
-                style: TextStyle(
-                  color: _hasChanges
-                      ? Theme.of(context).colorScheme.secondary
-                      : null,
-                  fontWeight: _hasChanges ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ),
-          ],
         ),
         body: ListView(
           padding: const EdgeInsets.all(16),
@@ -1237,7 +1209,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   )
                   .toList(),
               onChanged: (value) =>
-                  setState(() => draft = draft.copyWith(fontFamily: value)),
+                  _updateDraft(draft.copyWith(fontFamily: value)),
             ),
             const SizedBox(height: 12),
             Text('Schriftgröße: ${(draft.textScaleFactor * 100).round()} %'),
@@ -1247,35 +1219,34 @@ class _SettingsPageState extends State<SettingsPage> {
               max: 1.6,
               divisions: 22,
               label: '${(draft.textScaleFactor * 100).round()} %',
-              onChanged: (value) => setState(
-                  () => draft = draft.copyWith(textScaleFactor: value)),
+              onChanged: (value) =>
+                  _updateDraft(draft.copyWith(textScaleFactor: value)),
             ),
             SwitchListTile(
               title: const Text('Helles Theme'),
               value: draft.useLightTheme,
               onChanged: (value) =>
-                  setState(() => draft = draft.copyWith(useLightTheme: value)),
+                  _updateDraft(draft.copyWith(useLightTheme: value)),
             ),
             _ColorDropdown(
               label: 'Akzentfarbe',
               value: draft.accentColorValue,
-              onChanged: (value) => setState(
-                  () => draft = draft.copyWith(accentColorValue: value)),
+              onChanged: (value) =>
+                  _updateDraft(draft.copyWith(accentColorValue: value)),
             ),
             _ColorDropdown(
               label: 'Highlight-Farbe',
               value: draft.highlightColorValue,
-              onChanged: (value) => setState(
-                () => draft = draft.copyWith(highlightColorValue: value),
-              ),
+              onChanged: (value) =>
+                  _updateDraft(draft.copyWith(highlightColorValue: value)),
             ),
           ],
         ),
       );
 
-  Future<void> _save() async {
-    await widget.controller.update(draft);
-    if (mounted) Navigator.pop(context);
+  Future<void> _updateDraft(AppSettings value) async {
+    setState(() => draft = value);
+    await widget.controller.update(value);
   }
 }
 
