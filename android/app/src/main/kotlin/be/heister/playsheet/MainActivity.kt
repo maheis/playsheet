@@ -1,4 +1,4 @@
-package com.example.playsheet
+package be.heister.playsheet
 
 import io.flutter.embedding.android.FlutterActivity
 
