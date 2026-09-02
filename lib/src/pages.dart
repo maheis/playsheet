@@ -575,12 +575,7 @@ class _SettingsPageState extends State<SettingsPage> {
           onChanged: (value) =>
               setState(() => draft = draft.copyWith(fontFamily: value)),
         ),
-        SwitchListTile(
-          title: const Text('Helles Theme'),
-          value: draft.useLightTheme,
-          onChanged: (value) =>
-              setState(() => draft = draft.copyWith(useLightTheme: value)),
-        ),
+        const SizedBox(height: 12),
         Text('Schriftgröße: ${(draft.textScaleFactor * 100).round()} %'),
         Slider(
           value: draft.textScaleFactor,
@@ -590,6 +585,25 @@ class _SettingsPageState extends State<SettingsPage> {
           label: '${(draft.textScaleFactor * 100).round()} %',
           onChanged: (value) =>
               setState(() => draft = draft.copyWith(textScaleFactor: value)),
+        ),
+        SwitchListTile(
+          title: const Text('Helles Theme'),
+          value: draft.useLightTheme,
+          onChanged: (value) =>
+              setState(() => draft = draft.copyWith(useLightTheme: value)),
+        ),
+        _ColorDropdown(
+          label: 'Akzentfarbe',
+          value: draft.accentColorValue,
+          onChanged: (value) =>
+              setState(() => draft = draft.copyWith(accentColorValue: value)),
+        ),
+        _ColorDropdown(
+          label: 'Highlight-Farbe',
+          value: draft.highlightColorValue,
+          onChanged: (value) => setState(
+            () => draft = draft.copyWith(highlightColorValue: value),
+          ),
         ),
         const SizedBox(height: 20),
         FilledButton.icon(
@@ -601,6 +615,47 @@ class _SettingsPageState extends State<SettingsPage> {
           label: const Text('Speichern'),
         ),
       ],
+    ),
+  );
+}
+
+class _ColorDropdown extends StatelessWidget {
+  const _ColorDropdown({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final int value;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 12),
+    child: DropdownButtonFormField<int>(
+      initialValue: value,
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      items: [
+        for (var index = 0; index < AppSettings.availableColors.length; index++)
+          DropdownMenuItem(
+            value: AppSettings.availableColors[index].toARGB32(),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 9,
+                  backgroundColor: AppSettings.availableColors[index],
+                ),
+                const SizedBox(width: 10),
+                Text(AppSettings.colorNames[index]),
+              ],
+            ),
+          ),
+      ],
+      onChanged: onChanged,
     ),
   );
 }

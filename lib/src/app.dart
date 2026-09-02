@@ -39,8 +39,8 @@ class PlaySheetApp extends StatelessWidget {
   );
 
   ThemeData _theme(AppSettings settings, Brightness brightness) {
-    const accent = Color(0xFFE57373);
-    const highlight = Color(0xFFFFB74D);
+    final accent = Color(settings.accentColorValue);
+    final highlight = Color(settings.highlightColorValue);
     final scheme =
         ColorScheme.fromSeed(
           seedColor: accent,
@@ -56,9 +56,7 @@ class PlaySheetApp extends StatelessWidget {
       colorScheme: scheme,
       fontFamily: settings.fontFamily,
       scaffoldBackgroundColor: scheme.surface,
-      appBarTheme: const AppBarTheme(
-        iconTheme: IconThemeData(color: highlight),
-      ),
+      appBarTheme: AppBarTheme(iconTheme: IconThemeData(color: highlight)),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: highlight,
