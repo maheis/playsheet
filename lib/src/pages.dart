@@ -167,61 +167,81 @@ class _GameSessionsPageState extends State<GameSessionsPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('1 + 2 = 3')),
-        body: ListView(
-          padding: const EdgeInsets.all(12),
-          children: [
-            _ActionTile(
-              icon: Icons.add_rounded,
-              title: 'Spiel anlegen',
-              detail: 'Name, Gewinnart und Spieler festlegen',
-              onTap: _createGame,
-            ),
-            const SizedBox(height: 12),
-            ...widget.controller.gameSessions.map(
-              (session) => Card(
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    child: Icon(
-                      Icons.looks_3_rounded,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
+  Widget build(BuildContext context) {
+    final sessions = [...widget.controller.gameSessions]..sort((first, second) {
+        final lastPlayedComparison =
+            _lastPlayedAt(second).compareTo(_lastPlayedAt(first));
+        return lastPlayedComparison != 0
+            ? lastPlayedComparison
+            : second.createdAt.compareTo(first.createdAt);
+      });
+    return Scaffold(
+      appBar: AppBar(title: const Text('1 + 2 = 3')),
+      body: ListView(
+        padding: const EdgeInsets.all(12),
+        children: [
+          _ActionTile(
+            icon: Icons.add_rounded,
+            title: 'Spiel anlegen',
+            detail: 'Name, Gewinnart und Spieler festlegen',
+            onTap: _createGame,
+          ),
+          const SizedBox(height: 12),
+          ...sessions.map(
+            (session) => Card(
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  child: Icon(
+                    Icons.looks_3_rounded,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
-                  title: Text(session.name),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _playerNames(session),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        '${session.highWins ? 'Hoch' : 'Tief'} • '
-                        '${_roundCount(session)} Runden',
-                      ),
-                    ],
-                  ),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        tooltip: 'Spiel löschen',
-                        icon: const Icon(Icons.delete_outline_rounded),
-                        onPressed: () => _confirmDeleteGame(context, session),
-                      ),
-                      const Icon(Icons.chevron_right_rounded),
-                    ],
-                  ),
-                  onTap: () => _openGame(session),
                 ),
+                title: Text(session.name),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _playerNames(session),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      '${session.highWins ? 'Hoch' : 'Tief'} • '
+                      '${_roundCount(session)} Runden',
+                    ),
+                  ],
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      tooltip: 'Spiel löschen',
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      onPressed: () => _confirmDeleteGame(context, session),
+                    ),
+                    const Icon(Icons.chevron_right_rounded),
+                  ],
+                ),
+                onTap: () => _openGame(session),
               ),
             ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
+  }
+
+  DateTime _lastPlayedAt(GameSession session) {
+    final playedAt = widget.controller.games
+        .where((game) => game.sessionId == session.id)
+        .map((game) => game.playedAt)
+        .toList();
+    if (playedAt.isEmpty) return session.createdAt;
+    return playedAt.reduce(
+      (first, second) => first.isAfter(second) ? first : second,
+    );
+  }
 
   int _roundCount(GameSession session) => widget.controller.games
       .where((game) => game.sessionId == session.id)
@@ -642,7 +662,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     final rounds = widget.controller.games
         .where((game) => game.roundId == widget.round.id)
         .toList()
-      ..sort((first, second) => first.playedAt.compareTo(second.playedAt));
+      ..sort((first, second) => second.playedAt.compareTo(first.playedAt));
     final totals = {
       for (final player in widget.round.playerIds)
         player: rounds.fold<int>(
@@ -692,11 +712,11 @@ class _SubroundTableState extends State<_SubroundTable> {
                         _headerRow(context),
                         _totalsRow(context, totals, winningValue),
                         _draftRow(context, rounds.length + 1),
-                        ...rounds.reversed.map(
+                        ...rounds.map(
                           (round) => _roundRow(
                             context,
                             round,
-                            rounds.last.id == round.id,
+                            rounds.first.id == round.id,
                           ),
                         ),
                       ],
