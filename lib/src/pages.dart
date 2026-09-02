@@ -942,6 +942,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     return _CalculatorField(
       controller: controller,
       hintText: '0',
+      allowNegative: widget.session.gameBlockId != 'one_plus_two',
       onChanged: onChanged,
     );
   }
@@ -959,6 +960,10 @@ class _SubroundTableState extends State<_SubroundTable> {
     for (final id in widget.round.playerIds) {
       final text = draftControllers[id]?.text.trim() ?? '';
       final score = int.tryParse(text);
+      if (score != null && !_allowsNegativeScores && score < 0) {
+        _showNegativeScoreError();
+        return;
+      }
       if (score != null) scores[id] = score;
     }
     await widget.controller.addGame(
@@ -989,6 +994,10 @@ class _SubroundTableState extends State<_SubroundTable> {
     } else {
       final score = int.tryParse(value);
       if (score == null) return;
+      if (!_allowsNegativeScores && score < 0) {
+        _showNegativeScoreError();
+        return;
+      }
       scores[playerId] = score;
     }
     await widget.controller.updateGame(
@@ -1003,6 +1012,15 @@ class _SubroundTableState extends State<_SubroundTable> {
       ),
     );
     if (mounted) setState(() {});
+  }
+
+  bool get _allowsNegativeScores =>
+      widget.session.gameBlockId != 'one_plus_two';
+
+  void _showNegativeScoreError() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Negative Werte sind hier nicht erlaubt.')),
+    );
   }
 
   Future<void> _confirmDeleteRound(
@@ -1322,11 +1340,13 @@ class _CalculatorField extends StatefulWidget {
     required this.controller,
     this.onChanged,
     this.hintText,
+    this.allowNegative = true,
   });
 
   final TextEditingController controller;
   final ValueChanged<String>? onChanged;
   final String? hintText;
+  final bool allowNegative;
 
   @override
   State<_CalculatorField> createState() => _CalculatorFieldState();
@@ -1343,6 +1363,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
       ),
       builder: (context) => _CalculatorPad(
         initialExpression: expression,
+        allowNegative: widget.allowNegative,
         onExpressionChanged: (value) {
           expression = value;
           final result = _calculateExpression(value);
@@ -1386,10 +1407,12 @@ class _CalculatorFieldState extends State<_CalculatorField> {
 class _CalculatorPad extends StatefulWidget {
   const _CalculatorPad({
     required this.initialExpression,
+    required this.allowNegative,
     required this.onExpressionChanged,
   });
 
   final String initialExpression;
+  final bool allowNegative;
   final ValueChanged<String> onExpressionChanged;
 
   @override
@@ -1400,6 +1423,13 @@ class _CalculatorPadState extends State<_CalculatorPad> {
   late String expression = widget.initialExpression;
 
   void _press(String value) {
+    if (value == '−' && !widget.allowNegative) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Negative Werte sind hier nicht erlaubt.')),
+      );
+      return;
+    }
     setState(() {
       if (value == 'AC') {
         expression = '';
