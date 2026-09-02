@@ -57,7 +57,7 @@ auf derselben Datenbasis aufbauen.
 
 - [x] 1 + 2 = 3
 - [x] 3 +- 2 = 1
-- [ ] 10Tausend
+- [x] 10Tausend
 - [ ] Strichliste
 - [ ] Dam'jagen
 - [ ] Würfelblock

@@ -87,6 +87,19 @@ class HomePage extends StatelessWidget {
                         ),
                       ),
                     ),
+                    _ActionTile(
+                      icon: Icons.casino_rounded,
+                      title: '10 Tausend',
+                      detail:
+                          '${_gameCount(controller, 'ten_thousand')} Spiele',
+                      onTap: () => pushPage(
+                        context,
+                        GameSessionsPage(
+                          controller: controller,
+                          block: gameBlockFor('ten_thousand'),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -963,7 +976,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     return _CalculatorField(
       controller: controller,
       hintText: '0',
-      allowNegative: widget.session.gameBlockId != 'one_plus_two',
+      allowNegative: _allowsNegativeScores,
       onChanged: onChanged,
     );
   }
@@ -981,8 +994,8 @@ class _SubroundTableState extends State<_SubroundTable> {
     for (final id in widget.round.playerIds) {
       final text = draftControllers[id]?.text.trim() ?? '';
       final score = int.tryParse(text);
-      if (score != null && !_allowsNegativeScores && score < 0) {
-        _showNegativeScoreError();
+      if (score != null && !_isValidScore(score)) {
+        _showInvalidScoreError();
         return;
       }
       if (score != null) scores[id] = score;
@@ -1015,8 +1028,8 @@ class _SubroundTableState extends State<_SubroundTable> {
     } else {
       final score = int.tryParse(value);
       if (score == null) return;
-      if (!_allowsNegativeScores && score < 0) {
-        _showNegativeScoreError();
+      if (!_isValidScore(score)) {
+        _showInvalidScoreError();
         return;
       }
       scores[playerId] = score;
@@ -1036,11 +1049,23 @@ class _SubroundTableState extends State<_SubroundTable> {
   }
 
   bool get _allowsNegativeScores =>
-      widget.session.gameBlockId != 'one_plus_two';
+      widget.session.gameBlockId != 'one_plus_two' &&
+      widget.session.gameBlockId != 'ten_thousand';
 
-  void _showNegativeScoreError() {
+  bool _isValidScore(int score) {
+    if (!_allowsNegativeScores && score < 0) return false;
+    if (widget.session.gameBlockId == 'ten_thousand') {
+      return score >= 350 && score % 50 == 0;
+    }
+    return true;
+  }
+
+  void _showInvalidScoreError() {
+    final message = widget.session.gameBlockId == 'ten_thousand'
+        ? 'Bei 10 Tausend sind nur Werte ab 350 in 50er-Schritten erlaubt.'
+        : 'Negative Werte sind hier nicht erlaubt.';
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Negative Werte sind hier nicht erlaubt.')),
+      SnackBar(content: Text(message)),
     );
   }
 
