@@ -524,7 +524,7 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
     final rounds = widget.controller.gameRounds
         .where((round) => round.sessionId == widget.session.id)
         .toList()
-      ..sort((first, second) => first.createdAt.compareTo(second.createdAt));
+      ..sort((first, second) => second.createdAt.compareTo(first.createdAt));
     return Scaffold(
       appBar: AppBar(title: Text(widget.session.name)),
       body: ListView(
@@ -616,6 +616,7 @@ class _SubroundTable extends StatefulWidget {
 class _SubroundTableState extends State<_SubroundTable> {
   final draftControllers = <String, TextEditingController>{};
   final roundControllers = <String, TextEditingController>{};
+  bool editingLatest = false;
 
   @override
   void dispose() {
@@ -655,9 +656,15 @@ class _SubroundTableState extends State<_SubroundTable> {
           padding: const EdgeInsets.all(12),
           scrollDirection: Axis.horizontal,
           child: Table(
-            border: TableBorder.all(
-              color: Theme.of(context).dividerColor,
-              width: .6,
+            border: TableBorder(
+              horizontalInside: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: .6,
+              ),
+              verticalInside: BorderSide(
+                color: Theme.of(context).dividerColor,
+                width: .6,
+              ),
             ),
             defaultColumnWidth: const FixedColumnWidth(96),
             columnWidths: const {0: FixedColumnWidth(72)},
@@ -678,7 +685,7 @@ class _SubroundTableState extends State<_SubroundTable> {
 
   TableRow _headerRow(BuildContext context) => TableRow(
         children: [
-          _tableCell(context, const Text('Runden'), bold: true),
+          _tableCell(context, const SizedBox.shrink(), bold: true),
           ...widget.round.playerIds.map(
             (id) => _tableCell(
               context,
@@ -755,6 +762,19 @@ class _SubroundTableState extends State<_SubroundTable> {
                 Expanded(child: Text(_roundNumber(round))),
                 if (isLatest)
                   IconButton(
+                    tooltip: editingLatest
+                        ? 'Bearbeiten beenden'
+                        : 'Letzte Subrunde bearbeiten',
+                    icon: Icon(
+                      editingLatest ? Icons.check_rounded : Icons.edit_outlined,
+                      size: 18,
+                    ),
+                    padding: EdgeInsets.zero,
+                    onPressed: () =>
+                        setState(() => editingLatest = !editingLatest),
+                  ),
+                if (isLatest)
+                  IconButton(
                     tooltip: 'Runde löschen',
                     icon: const Icon(Icons.delete_outline_rounded, size: 18),
                     padding: EdgeInsets.zero,
@@ -767,7 +787,7 @@ class _SubroundTableState extends State<_SubroundTable> {
           ...widget.round.playerIds.map(
             (id) => _tableCell(
               context,
-              isLatest
+              isLatest && editingLatest
                   ? _scoreField(
                       roundControllers,
                       '${round.id}:$id',
@@ -875,6 +895,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     await widget.controller.updateGame(
       GameRecord(
         id: round.id,
+        roundId: round.roundId,
         sessionId: round.sessionId,
         gameBlockId: round.gameBlockId,
         playerIds: round.playerIds,
