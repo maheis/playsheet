@@ -114,6 +114,15 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateGame(GameRecord game) async {
+    games = [
+      for (final current in games)
+        if (current.id == game.id) game else current,
+    ];
+    await _repository.saveGames(games);
+    notifyListeners();
+  }
+
   Future<void> deleteGameSession(String id) async {
     gameSessions = gameSessions.where((session) => session.id != id).toList();
     games = games.where((game) => game.sessionId != id).toList();
