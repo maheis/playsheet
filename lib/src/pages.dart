@@ -1412,8 +1412,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
   Future<void> _openCalculator() async {
     var expression = widget.controller.text;
     final mediaQuery = MediaQuery.of(context);
-    final availableHeight =
-        mediaQuery.size.height - mediaQuery.padding.bottom - 2;
+    final availableHeight = math.max(0.0, mediaQuery.size.height - 133.0);
     final availableWidth = mediaQuery.size.width;
     const calculatorFixedHeight = 80.0;
     const gridVerticalSpacing = 8.0;
