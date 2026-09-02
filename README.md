@@ -13,14 +13,15 @@ Typografie, Farben und Einstellungen an VolleyAce und SimplePresent. Der
 Standard bleibt dunkel, Material 3 wird verwendet und die globale Darstellung
 ist über Settings anpassbar.
 
-Der erste vertikale Funktionsumfang ist bereits angelegt:
+Der aktuelle Grundumfang ist bewusst auf Spieler und Einstellungen reduziert:
 
-- Dashboard mit Spielblöcken, Spieleranzahl und Spielanzahl
-- seitenbasierter Ablauf `Spielblock → Spieler → Optionen → Scoreboard`
+- Dashboard mit Spieleranzahl
 - eindeutige, lokal gespeicherte Spieler zur Wiederverwendung
-- Gesamtstatistik mit Punktevergleich pro Spieler
 - globale Settings für Theme, Schriftart und Textskalierung
 - lokales Repository als austauschbare Basis für spätere Cloud-Synchronisierung
+
+Die Spielblöcke, Spielstände und Statistiken bleiben als technische Grundlage
+vorbereitet, sind im Dashboard aber vorerst nicht aktiviert.
 
 ### Modularer Spielblock
 

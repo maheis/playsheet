@@ -66,52 +66,6 @@ class HomePage extends StatelessWidget {
                   onTap: () =>
                       pushPage(context, PlayersPage(controller: controller)),
                 ),
-                _ActionTile(
-                  icon: Icons.sports_score_rounded,
-                  title: 'Spiele',
-                  detail: '${controller.games.length} gespeichert',
-                  onTap: () =>
-                      pushPage(context, StatisticsPage(controller: controller)),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 28),
-          const _SectionTitle('Spielblöcke'),
-          LayoutBuilder(
-            builder: (context, _) => _TileGrid(
-              children: [
-                _ActionTile(
-                  icon: Icons.add_rounded,
-                  title: 'Neues Spiel',
-                  detail: 'Spielblock auswählen',
-                  onTap: () =>
-                      pushPage(context, NewGamePage(controller: controller)),
-                ),
-                ...gameBlocks.map(
-                  (block) => _GameBlockTile(
-                    block: block,
-                    onTap: () => pushPage(
-                      context,
-                      NewGamePage(controller: controller, initialBlock: block),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          const _SectionTitle('Auswertung'),
-          LayoutBuilder(
-            builder: (context, _) => _TileGrid(
-              children: [
-                _ActionTile(
-                  icon: Icons.insights_rounded,
-                  title: 'Gesamtstatistik',
-                  detail: 'Spieler und Verläufe vergleichen',
-                  onTap: () =>
-                      pushPage(context, StatisticsPage(controller: controller)),
-                ),
               ],
             ),
           ),
@@ -172,64 +126,6 @@ class _ActionTile extends StatelessWidget {
                 children: [
                   Text(title, style: Theme.of(context).textTheme.titleMedium),
                   Text(detail, maxLines: 2, overflow: TextOverflow.ellipsis),
-                ],
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded),
-          ],
-        ),
-      ),
-    ),
-  );
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
-  final String text;
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
-    child: Text(
-      text,
-      style: Theme.of(context).textTheme.titleLarge
-          ?.copyWith(fontWeight: FontWeight.bold),
-    ),
-  );
-}
-
-class _GameBlockTile extends StatelessWidget {
-  const _GameBlockTile({required this.block, required this.onTap});
-  final GameBlockDefinition block;
-  final VoidCallback onTap;
-  @override
-  Widget build(BuildContext context) => Card(
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: block.color,
-              foregroundColor: Colors.black,
-              child: Icon(block.icon),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    block.name,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  Text(
-                    block.description,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
                 ],
               ),
             ),
@@ -609,6 +505,15 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   late AppSettings draft;
 
+  bool get _hasChanges {
+    final current = widget.controller.settings;
+    return draft.fontFamily != current.fontFamily ||
+        draft.textScaleFactor != current.textScaleFactor ||
+        draft.useLightTheme != current.useLightTheme ||
+        draft.accentColorValue != current.accentColorValue ||
+        draft.highlightColorValue != current.highlightColorValue;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -617,7 +522,23 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Einstellungen')),
+    appBar: AppBar(
+      title: const Text('Einstellungen'),
+      actions: [
+        TextButton(
+          onPressed: _save,
+          child: Text(
+            'Speichern',
+            style: TextStyle(
+              color: _hasChanges
+                  ? Theme.of(context).colorScheme.secondary
+                  : null,
+              fontWeight: _hasChanges ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+        ),
+      ],
+    ),
     body: ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -678,18 +599,14 @@ class _SettingsPageState extends State<SettingsPage> {
             () => draft = draft.copyWith(highlightColorValue: value),
           ),
         ),
-        const SizedBox(height: 20),
-        FilledButton.icon(
-          onPressed: () async {
-            await widget.controller.update(draft);
-            if (mounted) Navigator.pop(context);
-          },
-          icon: const Icon(Icons.save_rounded),
-          label: const Text('Speichern'),
-        ),
       ],
     ),
   );
+
+  Future<void> _save() async {
+    await widget.controller.update(draft);
+    if (mounted) Navigator.pop(context);
+  }
 }
 
 class _ColorDropdown extends StatelessWidget {
