@@ -7,8 +7,8 @@ Kurz und präzise Anleitung, um eine Android-Version in den Google Play Store zu
 - in `android/app/build.gradle.kts`
 
 ```bash
-namespace = "be.heister.volleyace"
-applicationId = "be.heister.volleyace"
+namespace = "be.heister.playsheet"
+applicationId = "be.heister.playsheet"
 ```
 
 ## 1) Versioning
@@ -21,8 +21,8 @@ applicationId = "be.heister.volleyace"
 
 ```bash
 keytool -genkeypair -v \
-  -keystore ~/.keystores/volleyace.jks \
-  -alias volleyace_key \
+  -keystore ~/.keystores/playsheet.jks \
+  -alias playsheet_key \
   -keyalg RSA -keysize 2048 -validity 10000
 
 #CN=Manfred Heister,OU=ALLSTAR,O=maheis,L=Dietfurt,ST=BY,C=DE
@@ -53,13 +53,13 @@ keytool -genkeypair -v \
 KEYSTORE_BASE64   = base64-encoded keystore file
 KEYSTORE_PASSWORD = storePassword
 KEY_PASSWORD      = storePassword
-KEY_ALIAS         = volleyace_key
+KEY_ALIAS         = playsheet_key
 ```
 
 How to create KEYSTORE_BASE64 locally:
 
 ```bash
-base64 ~/.keystores/volleyace.jks | tr -d '\n' > ~/.keystores/volleyace_base64.txt
+base64 ~/.keystores/playsheet.jks | tr -d '\n' > ~/.keystores/playsheet_base64.txt
 ```
 
 - Beispiel-Snippet (Auszug):
