@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'app_controller.dart';
@@ -1328,8 +1330,6 @@ class _CalculatorPadState extends State<_CalculatorPad> {
         final opening = '('.allMatches(expression).length;
         final closing = ')'.allMatches(expression).length;
         expression += opening > closing ? ')' : '(';
-      } else if (value == '%') {
-        expression += '%';
       } else {
         expression += value;
       }
@@ -1349,7 +1349,7 @@ class _CalculatorPadState extends State<_CalculatorPad> {
     final buttons = [
       ('AC', colors.secondaryContainer, colors.onSecondaryContainer),
       ('()', colors.secondaryContainer, colors.onSecondaryContainer),
-      ('%', colors.secondaryContainer, colors.onSecondaryContainer),
+      ('^', colors.secondaryContainer, colors.onSecondaryContainer),
       ('÷', colors.tertiaryContainer, colors.onTertiaryContainer),
       ('7', colors.surfaceContainerHighest, colors.onSurface),
       ('8', colors.surfaceContainerHighest, colors.onSurface),
@@ -1497,19 +1497,25 @@ class _ExpressionParser {
   }
 
   num _parseTerm() {
-    var value = _parseFactor();
+    var value = _parsePower();
     while (true) {
       _skipSpaces();
       if (_match('*') || _match('×')) {
-        value *= _parseFactor();
+        value *= _parsePower();
       } else if (_match('/') || _match('÷')) {
-        final divisor = _parseFactor();
+        final divisor = _parsePower();
         if (divisor == 0) throw const FormatException();
         value /= divisor;
       } else {
         return value;
       }
     }
+  }
+
+  num _parsePower() {
+    final value = _parseFactor();
+    if (!_match('^')) return value;
+    return math.pow(value, _parsePower());
   }
 
   num _parseFactor() {
@@ -1519,7 +1525,7 @@ class _ExpressionParser {
     if (_match('(')) {
       final value = _parseExpression();
       if (!_match(')')) throw const FormatException();
-      return _match('%') ? value / 100 : value;
+      return value;
     }
     final start = position;
     while (position < source.length &&
@@ -1529,7 +1535,7 @@ class _ExpressionParser {
     if (start == position) throw const FormatException();
     final value = double.tryParse(source.substring(start, position));
     if (value == null) throw const FormatException();
-    return _match('%') ? value / 100 : value;
+    return value;
   }
 
   bool _match(String character) {
