@@ -155,6 +155,38 @@ class AppController extends ChangeNotifier {
     required String gameBlockId,
     required List<String> playerIds,
   }) async {
+    final session = gameSessions.firstWhere((item) => item.id == sessionId);
+    final completedRounds = gameRounds.map((round) {
+      if (round.sessionId != sessionId || round.completed) return round;
+      final totals = {
+        for (final playerId in round.playerIds)
+          playerId: games
+              .where((game) => game.roundId == round.id)
+              .fold<int>(0, (sum, game) => sum + (game.scores[playerId] ?? 0)),
+      };
+      final winnerPlayerIds = totals.isEmpty
+          ? const <String>[]
+          : () {
+              final winnerValue = session.highWins
+                  ? totals.values.reduce(
+                      (first, second) => first > second ? first : second)
+                  : totals.values.reduce(
+                      (first, second) => first < second ? first : second);
+              return totals.entries
+                  .where((entry) => entry.value == winnerValue)
+                  .map((entry) => entry.key)
+                  .toList();
+            }();
+      return GameRound(
+        id: round.id,
+        sessionId: round.sessionId,
+        gameBlockId: round.gameBlockId,
+        playerIds: round.playerIds,
+        createdAt: round.createdAt,
+        completed: true,
+        winnerPlayerIds: winnerPlayerIds,
+      );
+    }).toList();
     final round = GameRound(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       sessionId: sessionId,
@@ -162,7 +194,7 @@ class AppController extends ChangeNotifier {
       playerIds: playerIds,
       createdAt: DateTime.now(),
     );
-    gameRounds = [...gameRounds, round];
+    gameRounds = [...completedRounds, round];
     await _repository.saveGameRounds(gameRounds);
     notifyListeners();
     return round;

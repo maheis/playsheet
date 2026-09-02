@@ -56,6 +56,8 @@ class GameRound {
     required this.gameBlockId,
     required this.playerIds,
     required this.createdAt,
+    this.completed = false,
+    this.winnerPlayerIds = const [],
   });
 
   final String id;
@@ -63,6 +65,8 @@ class GameRound {
   final String gameBlockId;
   final List<String> playerIds;
   final DateTime createdAt;
+  final bool completed;
+  final List<String> winnerPlayerIds;
 }
 
 class GameSession {

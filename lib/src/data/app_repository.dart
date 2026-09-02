@@ -75,6 +75,8 @@ class LocalAppRepository implements AppRepository {
         'gameBlockId': round.gameBlockId,
         'playerIds': round.playerIds,
         'createdAt': round.createdAt.toIso8601String(),
+        'completed': round.completed,
+        'winnerPlayerIds': round.winnerPlayerIds,
       };
 
   GameRound _gameRoundFromData(Map<String, dynamic> data) => GameRound(
@@ -83,6 +85,10 @@ class LocalAppRepository implements AppRepository {
         gameBlockId: data['gameBlockId'] as String,
         playerIds: List<String>.from(data['playerIds'] as List<dynamic>),
         createdAt: DateTime.parse(data['createdAt'] as String),
+        completed: data['completed'] as bool? ?? false,
+        winnerPlayerIds: List<String>.from(
+          (data['winnerPlayerIds'] as List<dynamic>?) ?? const [],
+        ),
       );
 
   Map<String, dynamic> _gameSessionData(GameSession session) => {

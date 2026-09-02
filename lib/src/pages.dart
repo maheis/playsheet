@@ -560,37 +560,54 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
               onTap: _newRound,
             ),
             const SizedBox(height: 12),
-            ...rounds.asMap().entries.map(
-                  (entry) => Card(
-                    child: ListTile(
-                      leading: CircleAvatar(child: Text('${entry.key + 1}')),
-                      title: Text('Durchgang ${entry.key + 1}'),
-                      subtitle: Text(
-                        '${entry.value.playerIds.length} Spieler • '
-                        '${_subroundCount(entry.value)} Spielrunden',
+            ...rounds.asMap().entries.map((entry) {
+              final roundNumber = rounds.length - entry.key;
+              final round = entry.value;
+              return Card(
+                child: ListTile(
+                  leading: CircleAvatar(child: Text('$roundNumber')),
+                  title: Text('Durchgang $roundNumber'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${round.playerIds.length} Spieler • '
+                        '${_subroundCount(round)} Spielrunden',
                       ),
-                      trailing: IconButton(
-                        tooltip: 'Durchgang löschen',
-                        icon: const Icon(Icons.delete_outline_rounded),
-                        onPressed: () =>
-                            _confirmDeleteRound(context, entry.value),
+                      Text(
+                        round.completed
+                            ? 'Abgeschlossen • Sieger: ${_winnerNames(round)}'
+                            : 'Offen',
                       ),
-                      onTap: () => pushPage(
-                        context,
-                        _SubroundTable(
-                          controller: widget.controller,
-                          session: widget.session,
-                          round: entry.value,
-                        ),
-                      ),
+                    ],
+                  ),
+                  trailing: IconButton(
+                    tooltip: 'Durchgang löschen',
+                    icon: const Icon(Icons.delete_outline_rounded),
+                    onPressed: () => _confirmDeleteRound(context, round),
+                  ),
+                  onTap: () => pushPage(
+                    context,
+                    _SubroundTable(
+                      controller: widget.controller,
+                      session: widget.session,
+                      round: round,
                     ),
                   ),
                 ),
+              );
+            }),
           ],
         ),
       ),
     );
   }
+
+  String _winnerNames(GameRound round) => round.winnerPlayerIds.isEmpty
+      ? '–'
+      : round.winnerPlayerIds
+          .map((id) => widget.controller.playerById(id)?.name ?? 'Unbekannt')
+          .join(', ');
 
   int _subroundCount(GameRound round) =>
       widget.controller.games.where((game) => game.roundId == round.id).length;
