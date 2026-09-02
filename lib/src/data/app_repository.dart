@@ -25,6 +25,8 @@ class LocalAppRepository implements AppRepository {
           createdAt: data['createdAt'] == null
               ? DateTime.fromMillisecondsSinceEpoch(entry.$1)
               : DateTime.parse(data['createdAt'] as String),
+          primaryColorValue: (data['primaryColorValue'] as num?)?.toInt(),
+          secondaryColorValue: (data['secondaryColorValue'] as num?)?.toInt(),
         );
       }).toList();
 
@@ -54,6 +56,8 @@ class LocalAppRepository implements AppRepository {
             'id': player.id,
             'name': player.name,
             'createdAt': player.createdAt.toIso8601String(),
+            'primaryColorValue': player.primaryColorValue,
+            'secondaryColorValue': player.secondaryColorValue,
           }),
         )
         .toList(),

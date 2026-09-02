@@ -34,6 +34,8 @@ class AppController extends ChangeNotifier {
             id: normalizedId,
             name: player.name,
             createdAt: player.createdAt,
+            primaryColorValue: player.primaryColorValue,
+            secondaryColorValue: player.secondaryColorValue,
           );
         }(),
     ];
@@ -61,26 +63,37 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> addPlayer(String name) async {
+  Future<Player> addPlayer(String name) async {
     final nextId =
         players.fold<int>(0, (highest, player) {
           final id = int.tryParse(player.id) ?? 0;
           return id > highest ? id : highest;
         }) +
         1;
-    players = [
-      ...players,
-      Player(id: '$nextId', name: name, createdAt: DateTime.now()),
-    ];
+    final player = Player(id: '$nextId', name: name, createdAt: DateTime.now());
+    players = [...players, player];
     await _repository.savePlayers(players);
     notifyListeners();
+    return player;
   }
 
-  Future<void> updatePlayer(String id, String name) async {
+  Future<void> updatePlayer(
+    String id, {
+    String? name,
+    int? primaryColorValue,
+    int? secondaryColorValue,
+  }) async {
     players = [
       for (final player in players)
         if (player.id == id)
-          Player(id: id, name: name, createdAt: player.createdAt)
+          Player(
+            id: id,
+            name: name ?? player.name,
+            createdAt: player.createdAt,
+            primaryColorValue: primaryColorValue ?? player.primaryColorValue,
+            secondaryColorValue:
+                secondaryColorValue ?? player.secondaryColorValue,
+          )
         else
           player,
     ];

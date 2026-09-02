@@ -73,5 +73,5 @@ class PlaySheetApp extends StatelessWidget {
   }
 }
 
-void pushPage(BuildContext context, Widget page) =>
+Future<void> pushPage(BuildContext context, Widget page) =>
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));

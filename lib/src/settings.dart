@@ -38,6 +38,12 @@ class AppSettings {
     'Lila',
   ];
 
+  static const playerColors = <Color>[
+    ...availableColors,
+    Colors.black,
+    Colors.white,
+  ];
+
   final String fontFamily;
   final double textScaleFactor;
   final bool useLightTheme;

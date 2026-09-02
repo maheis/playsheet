@@ -279,6 +279,8 @@ class AddPlayerPage extends StatefulWidget {
 
 class _AddPlayerPageState extends State<AddPlayerPage> {
   late final TextEditingController name;
+  late int? primaryColorValue;
+  late int? secondaryColorValue;
 
   bool get isEditing => widget.player != null;
 
@@ -286,6 +288,8 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
   void initState() {
     super.initState();
     name = TextEditingController(text: widget.player?.name ?? '');
+    primaryColorValue = widget.player?.primaryColorValue;
+    secondaryColorValue = widget.player?.secondaryColorValue;
   }
 
   @override
@@ -296,46 +300,94 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      title: Text(isEditing ? 'Spieler bearbeiten' : 'Spieler anlegen'),
-    ),
-    body: Padding(
+    appBar: AppBar(title: Text(name.text.isEmpty ? 'Spieler' : name.text)),
+    body: ListView(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text('Spieler können in jedem Spiel wiederverwendet werden.'),
-          const SizedBox(height: 20),
-          TextField(
-            controller: name,
-            autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Name',
-              border: OutlineInputBorder(),
-            ),
+      children: [
+        TextField(
+          controller: name,
+          autofocus: true,
+          onChanged: (_) {
+            setState(() {});
+            _saveChanges();
+          },
+          decoration: const InputDecoration(
+            labelText: 'Name',
+            border: OutlineInputBorder(),
           ),
-          const Spacer(),
-          FilledButton.icon(
-            onPressed: _save,
-            icon: const Icon(Icons.save_rounded),
-            label: Text(
-              isEditing ? 'Änderungen speichern' : 'Spieler speichern',
-            ),
+        ),
+        const SizedBox(height: 16),
+        _PlayerColorPicker(
+          label: 'Primärfarbe',
+          selectedValue: primaryColorValue,
+          onSelected: (value) {
+            setState(() => primaryColorValue = value);
+            _saveChanges();
+          },
+        ),
+        const SizedBox(height: 12),
+        _PlayerColorPicker(
+          label: 'Sekundärfarbe',
+          selectedValue: secondaryColorValue,
+          onSelected: (value) {
+            setState(() => secondaryColorValue = value);
+            _saveChanges();
+          },
+        ),
+        const SizedBox(height: 24),
+        Center(
+          child: _PlayerIcon(
+            primaryColorValue: primaryColorValue,
+            secondaryColorValue: secondaryColorValue,
+          ),
+        ),
+        if (isEditing) ...[
+          const SizedBox(height: 28),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.delete_outline_rounded),
+            title: const Text('Spieler löschen'),
+            subtitle: const Text('Spieler unwiderruflich entfernen'),
+            onTap: _delete,
           ),
         ],
-      ),
+      ],
     ),
   );
 
-  Future<void> _save() async {
-    final playerName = name.text.trim();
-    if (playerName.isEmpty) return;
-    if (isEditing) {
-      await widget.controller.updatePlayer(widget.player!.id, playerName);
-    } else {
-      await widget.controller.addPlayer(playerName);
+  Future<void> _saveChanges() {
+    final player = widget.player;
+    if (player == null) return Future.value();
+    return widget.controller.updatePlayer(
+      player.id,
+      name: name.text.trim(),
+      primaryColorValue: primaryColorValue,
+      secondaryColorValue: secondaryColorValue,
+    );
+  }
+
+  Future<void> _delete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Spieler löschen?'),
+        content: Text('„${name.text.trim()}“ wirklich löschen?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Löschen'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      await widget.controller.deletePlayer(widget.player!.id);
+      if (mounted) Navigator.pop(context);
     }
-    if (mounted) Navigator.pop(context);
   }
 }
 
@@ -430,13 +482,109 @@ class _ScoreboardPageState extends State<ScoreboardPage> {
   }
 }
 
-class PlayersPage extends StatelessWidget {
+class _PlayerColorPicker extends StatelessWidget {
+  const _PlayerColorPicker({
+    required this.label,
+    required this.selectedValue,
+    required this.onSelected,
+  });
+
+  final String label;
+  final int? selectedValue;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) => InputDecorator(
+    decoration: InputDecoration(
+      labelText: label,
+      border: const OutlineInputBorder(),
+    ),
+    child: Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: AppSettings.playerColors.map((color) {
+        final isSelected = selectedValue == color.toARGB32();
+        return Semantics(
+          button: true,
+          label: '$label ${color.toARGB32()}',
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () => onSelected(color.toARGB32()),
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: color,
+              child: isSelected
+                  ? Icon(
+                      Icons.check,
+                      size: 18,
+                      color: color.computeLuminance() > 0.5
+                          ? Colors.black
+                          : Colors.white,
+                    )
+                  : null,
+            ),
+          ),
+        );
+      }).toList(),
+    ),
+  );
+}
+
+class _PlayerIcon extends StatelessWidget {
+  const _PlayerIcon({this.primaryColorValue, this.secondaryColorValue});
+
+  final int? primaryColorValue;
+  final int? secondaryColorValue;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return CircleAvatar(
+      radius: 30,
+      backgroundColor: primaryColorValue == null
+          ? colorScheme.primary
+          : Color(primaryColorValue!),
+      child: Icon(
+        Icons.person_rounded,
+        size: 34,
+        color: secondaryColorValue == null
+            ? colorScheme.surfaceContainerHighest
+            : Color(secondaryColorValue!),
+      ),
+    );
+  }
+}
+
+class PlayersPage extends StatefulWidget {
   const PlayersPage({super.key, required this.controller});
   final AppController controller;
 
   @override
+  State<PlayersPage> createState() => _PlayersPageState();
+}
+
+class _PlayersPageState extends State<PlayersPage> {
+  Future<void> _openNewPlayer() async {
+    final player = await widget.controller.addPlayer('');
+    if (!mounted) return;
+    await pushPage(
+      context,
+      AddPlayerPage(controller: widget.controller, player: player),
+    );
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _openPlayer(Player player) async {
+    await pushPage(
+      context,
+      AddPlayerPage(controller: widget.controller, player: player),
+    );
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final sortedPlayers = [...controller.players]
+    final sortedPlayers = [...widget.controller.players]
       ..sort((first, second) {
         final firstGames = _gameCount(first);
         final secondGames = _gameCount(second);
@@ -455,34 +603,41 @@ class PlayersPage extends StatelessWidget {
             icon: Icons.add_rounded,
             title: 'Spieler hinzufügen',
             detail: 'Neuen Spieler anlegen',
-            onTap: () =>
-                pushPage(context, AddPlayerPage(controller: controller)),
+            onTap: _openNewPlayer,
           ),
           const SizedBox(height: 12),
           ...sortedPlayers.map(
             (player) => Card(
               child: ListTile(
-                leading: CircleAvatar(child: Text(player.id)),
-                title: Text(player.name),
-                subtitle: Text('${_gameCount(player)} Spiele'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      tooltip: 'Spieler bearbeiten',
-                      icon: const Icon(Icons.edit_rounded),
-                      onPressed: () => pushPage(
-                        context,
-                        AddPlayerPage(controller: controller, player: player),
-                      ),
-                    ),
-                    IconButton(
-                      tooltip: 'Spieler löschen',
-                      icon: const Icon(Icons.delete_outline_rounded),
-                      onPressed: () => _confirmDelete(context, player),
-                    ),
-                  ],
+                leading: _PlayerIcon(
+                  primaryColorValue: player.primaryColorValue,
+                  secondaryColorValue: player.secondaryColorValue,
                 ),
+                title: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: player.name.isEmpty
+                            ? 'Unbenannter Spieler'
+                            : player.name,
+                      ),
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.baseline,
+                        baseline: TextBaseline.alphabetic,
+                        child: Transform.translate(
+                          offset: const Offset(0, 4),
+                          child: Text(
+                            ' ${player.id}',
+                            style: Theme.of(context).textTheme.labelSmall,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                subtitle: Text('${_gameCount(player)} Spiele'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => _openPlayer(player),
               ),
             ),
           ),
@@ -491,30 +646,9 @@ class PlayersPage extends StatelessWidget {
     );
   }
 
-  int _gameCount(Player player) => controller.games
+  int _gameCount(Player player) => widget.controller.games
       .where((game) => game.playerIds.contains(player.id))
       .length;
-
-  Future<void> _confirmDelete(BuildContext context, Player player) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Spieler löschen?'),
-        content: Text('„${player.name}“ wirklich löschen?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Abbrechen'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Löschen'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) await controller.deletePlayer(player.id);
-  }
 }
 
 class StatisticsPage extends StatelessWidget {

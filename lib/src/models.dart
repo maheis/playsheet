@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 
 class Player {
-  const Player({required this.id, required this.name, required this.createdAt});
+  const Player({
+    required this.id,
+    required this.name,
+    required this.createdAt,
+    this.primaryColorValue,
+    this.secondaryColorValue,
+  });
   final String id;
   final String name;
   final DateTime createdAt;
+  final int? primaryColorValue;
+  final int? secondaryColorValue;
 }
 
 class GameBlockDefinition {
