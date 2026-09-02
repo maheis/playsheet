@@ -22,12 +22,14 @@ class GameBlockDefinition {
     required this.description,
     required this.icon,
     required this.color,
+    this.iconLabel,
   });
   final String id;
   final String name;
   final String description;
   final IconData icon;
   final Color color;
+  final String? iconLabel;
 }
 
 class GameRecord {
@@ -94,6 +96,7 @@ const gameBlocks = <GameBlockDefinition>[
     description: 'Spielrunden mit Hoch- oder Tiefwertung.',
     icon: Icons.looks_3_rounded,
     color: Color(0xFFE57373),
+    iconLabel: '++',
   ),
   GameBlockDefinition(
     id: 'three_plus_minus_two',
@@ -101,6 +104,7 @@ const gameBlocks = <GameBlockDefinition>[
     description: 'Spielrunden mit positiven und negativen Werten.',
     icon: Icons.exposure_plus_1_rounded,
     color: Color(0xFFBA68C8),
+    iconLabel: '+-',
   ),
   GameBlockDefinition(
     id: 'damjagen',

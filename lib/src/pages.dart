@@ -60,6 +60,7 @@ class HomePage extends StatelessWidget {
                     ),
                     _ActionTile(
                       icon: Icons.looks_3_rounded,
+                      iconLabel: gameBlockFor('one_plus_two').iconLabel,
                       title: '1 + 2 = 3',
                       detail:
                           '${_gameCount(controller, 'one_plus_two')} Spiele',
@@ -73,6 +74,7 @@ class HomePage extends StatelessWidget {
                     ),
                     _ActionTile(
                       icon: Icons.exposure_plus_1_rounded,
+                      iconLabel: gameBlockFor('three_plus_minus_two').iconLabel,
                       title: '3 +- 2 = 1',
                       detail:
                           '${_gameCount(controller, 'three_plus_minus_two')} '
@@ -120,11 +122,13 @@ class _TileGrid extends StatelessWidget {
 class _ActionTile extends StatelessWidget {
   const _ActionTile({
     required this.icon,
+    this.iconLabel,
     required this.title,
     required this.detail,
     required this.onTap,
   });
   final IconData icon;
+  final String? iconLabel;
   final String title;
   final String detail;
   final VoidCallback onTap;
@@ -138,11 +142,20 @@ class _ActionTile extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                Icon(
-                  icon,
-                  size: 32,
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
+                iconLabel == null
+                    ? Icon(
+                        icon,
+                        size: 32,
+                        color: Theme.of(context).colorScheme.secondary,
+                      )
+                    : Text(
+                        iconLabel!,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -226,10 +239,18 @@ class _GameSessionsPageState extends State<GameSessionsPage> {
               child: ListTile(
                 leading: CircleAvatar(
                   backgroundColor: Theme.of(context).colorScheme.primary,
-                  child: Icon(
-                    Icons.looks_3_rounded,
-                    color: Theme.of(context).colorScheme.onPrimary,
-                  ),
+                  child: widget.block.iconLabel == null
+                      ? Icon(
+                          widget.block.icon,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        )
+                      : Text(
+                          widget.block.iconLabel!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
                 title: Text(session.name),
                 subtitle: Column(
@@ -1118,7 +1139,15 @@ class _NewGamePageState extends State<NewGamePage> {
                     onChanged: (value) => setState(() => block = value),
                     title: Text(item.name),
                     subtitle: Text(item.description),
-                    secondary: Icon(item.icon, color: item.color),
+                    secondary: item.iconLabel == null
+                        ? Icon(item.icon, color: item.color)
+                        : Text(
+                            item.iconLabel!,
+                            style: TextStyle(
+                              color: item.color,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
               ),
