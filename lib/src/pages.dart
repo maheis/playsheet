@@ -46,16 +46,6 @@ class HomePage extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          Text(
-            'Dein Spielblock',
-            style: Theme.of(context).textTheme.headlineMedium
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 6),
-          const Text(
-            'Ergebnisse festhalten. Spieler wiederverwenden. Statistiken entdecken.',
-          ),
-          const SizedBox(height: 24),
           LayoutBuilder(
             builder: (context, _) => _TileGrid(
               children: [
