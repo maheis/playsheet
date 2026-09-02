@@ -15,41 +15,42 @@ class PlaySheetApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-    animation: settingsController,
-    builder: (context, _) {
-      final settings = settingsController.settings;
-      return MaterialApp(
-        title: 'PlaySheet',
-        debugShowCheckedModeBanner: false,
-        theme: _theme(settings, Brightness.light),
-        darkTheme: _theme(settings, Brightness.dark),
-        themeMode: settings.useLightTheme ? ThemeMode.light : ThemeMode.dark,
-        builder: (context, child) => MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(textScaler: TextScaler.linear(settings.textScaleFactor)),
-          child: child ?? const SizedBox.shrink(),
-        ),
-        home: HomePage(
-          controller: controller,
-          settingsController: settingsController,
-        ),
+        animation: settingsController,
+        builder: (context, _) {
+          final settings = settingsController.settings;
+          return MaterialApp(
+            title: 'PlaySheet',
+            debugShowCheckedModeBanner: false,
+            theme: _theme(settings, Brightness.light),
+            darkTheme: _theme(settings, Brightness.dark),
+            themeMode:
+                settings.useLightTheme ? ThemeMode.light : ThemeMode.dark,
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(
+                  textScaler: TextScaler.linear(settings.textScaleFactor)),
+              child: child ?? const SizedBox.shrink(),
+            ),
+            home: HomePage(
+              controller: controller,
+              settingsController: settingsController,
+            ),
+          );
+        },
       );
-    },
-  );
 
   ThemeData _theme(AppSettings settings, Brightness brightness) {
     final accent = Color(settings.accentColorValue);
     final highlight = Color(settings.highlightColorValue);
-    final scheme =
-        ColorScheme.fromSeed(
-          seedColor: accent,
-          brightness: brightness,
-        ).copyWith(
-          primary: accent,
-          secondary: highlight,
-          tertiary: const Color(0xFF8FDCBE),
-        );
+    final scheme = ColorScheme.fromSeed(
+      seedColor: accent,
+      brightness: brightness,
+    ).copyWith(
+      primary: accent,
+      secondary: highlight,
+      tertiary: const Color(0xFF8FDCBE),
+    );
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
