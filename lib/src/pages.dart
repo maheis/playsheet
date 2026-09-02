@@ -159,14 +159,14 @@ class _ActionTile extends StatelessWidget {
                     ? Icon(
                         icon,
                         size: 32,
-                        color: Theme.of(context).colorScheme.secondary,
+                        color: Theme.of(context).iconTheme.color,
                       )
                     : Text(
                         iconLabel!,
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.secondary,
+                          color: Theme.of(context).iconTheme.color,
                         ),
                       ),
                 const SizedBox(width: 14),
@@ -1564,7 +1564,7 @@ class _CalculatorPadState extends State<_CalculatorPad> {
       ('0', colors.surfaceContainerHighest, colors.onSurface),
       (',', colors.surfaceContainerHighest, colors.onSurface),
       ('⌫', colors.surfaceContainerHighest, colors.onSurface),
-      ('↵', colors.primary, colors.onPrimary),
+      ('↵', colors.secondary, colors.onSecondary),
     ];
     return SafeArea(
       top: false,

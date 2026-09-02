@@ -48,7 +48,6 @@ class PlaySheetApp extends StatelessWidget {
       brightness: brightness,
     ).copyWith(
       primary: accent,
-      secondary: highlight,
       tertiary: const Color(0xFF8FDCBE),
     );
     return ThemeData(
@@ -57,7 +56,23 @@ class PlaySheetApp extends StatelessWidget {
       colorScheme: scheme,
       fontFamily: settings.fontFamily,
       scaffoldBackgroundColor: scheme.surface,
-      appBarTheme: AppBarTheme(iconTheme: IconThemeData(color: highlight)),
+      iconTheme: IconThemeData(color: highlight),
+      appBarTheme: AppBarTheme(
+        iconTheme: IconThemeData(color: highlight),
+        actionsIconTheme: IconThemeData(color: highlight),
+      ),
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(foregroundColor: highlight),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: highlight),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: highlight,
+          side: BorderSide(color: highlight),
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: highlight,
@@ -69,6 +84,47 @@ class PlaySheetApp extends StatelessWidget {
           backgroundColor: highlight,
           foregroundColor: Colors.black,
         ),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith<Color?>((states) {
+          return states.contains(WidgetState.selected) ? highlight : null;
+        }),
+        side: WidgetStateBorderSide.resolveWith(
+          (_) => BorderSide(color: highlight),
+        ),
+      ),
+      radioTheme: RadioThemeData(
+        fillColor: WidgetStatePropertyAll(highlight),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith<Color?>((states) {
+          return states.contains(WidgetState.selected) ? highlight : null;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
+              ? highlight.withValues(alpha: 0.5)
+              : null;
+        }),
+      ),
+      sliderTheme: SliderThemeData(
+        thumbColor: highlight,
+        activeTrackColor: highlight,
+        inactiveTrackColor: highlight.withValues(alpha: 0.35),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: highlight,
+        foregroundColor: Colors.black,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: highlight, width: 2),
+        ),
+        floatingLabelStyle: TextStyle(color: highlight),
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: highlight,
+        selectionColor: highlight.withValues(alpha: 0.3),
+        selectionHandleColor: highlight,
       ),
     );
   }
