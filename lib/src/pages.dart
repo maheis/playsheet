@@ -976,7 +976,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     return _CalculatorField(
       controller: controller,
       hintText: '0',
-      allowNegative: _allowsNegativeScores,
+      allowNegative: widget.session.gameBlockId != 'ten_thousand',
       onChanged: onChanged,
     );
   }
