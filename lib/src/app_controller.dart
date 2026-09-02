@@ -210,7 +210,7 @@ class AppController extends ChangeNotifier {
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       gameBlockId: gameBlockId,
       name: name,
-      highWins: highWins,
+      highWins: gameBlockId == 'ten_thousand' ? true : highWins,
       playerIds: playerIds,
       createdAt: DateTime.now(),
     );
@@ -221,9 +221,19 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> updateGameSession(GameSession session) async {
+    final normalizedSession = session.gameBlockId == 'ten_thousand'
+        ? GameSession(
+            id: session.id,
+            gameBlockId: session.gameBlockId,
+            name: session.name,
+            highWins: true,
+            playerIds: session.playerIds,
+            createdAt: session.createdAt,
+          )
+        : session;
     gameSessions = [
       for (final current in gameSessions)
-        if (current.id == session.id) session else current,
+        if (current.id == normalizedSession.id) normalizedSession else current,
     ];
     await _repository.saveGameSessions(gameSessions);
     notifyListeners();

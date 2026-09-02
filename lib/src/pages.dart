@@ -400,26 +400,28 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
                 border: OutlineInputBorder(),
               ),
             ),
-            const SizedBox(height: 20),
-            Text('Gewinnart', style: Theme.of(context).textTheme.titleMedium),
-            RadioListTile<bool>(
-              value: true,
-              groupValue: highWins,
-              title: const Text('Hoch gewinnt'),
-              onChanged: (value) {
-                setState(() => highWins = value ?? true);
-                _persistConfiguration();
-              },
-            ),
-            RadioListTile<bool>(
-              value: false,
-              groupValue: highWins,
-              title: const Text('Tief gewinnt'),
-              onChanged: (value) {
-                setState(() => highWins = value ?? true);
-                _persistConfiguration();
-              },
-            ),
+            if (widget.block.id != 'ten_thousand') ...[
+              const SizedBox(height: 20),
+              Text('Gewinnart', style: Theme.of(context).textTheme.titleMedium),
+              RadioListTile<bool>(
+                value: true,
+                groupValue: highWins,
+                title: const Text('Hoch gewinnt'),
+                onChanged: (value) {
+                  setState(() => highWins = value ?? true);
+                  _persistConfiguration();
+                },
+              ),
+              RadioListTile<bool>(
+                value: false,
+                groupValue: highWins,
+                title: const Text('Tief gewinnt'),
+                onChanged: (value) {
+                  setState(() => highWins = value ?? true);
+                  _persistConfiguration();
+                },
+              ),
+            ],
             const SizedBox(height: 12),
             Text('Spieler', style: Theme.of(context).textTheme.titleMedium),
             Autocomplete<Player>(
@@ -563,7 +565,7 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
       id: session?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
       gameBlockId: widget.block.id,
       name: gameName,
-      highWins: highWins,
+      highWins: widget.block.id == 'ten_thousand' ? true : highWins,
       playerIds: selectedPlayerIds.toList(),
       createdAt: session?.createdAt ?? DateTime.now(),
     );
@@ -1409,11 +1411,16 @@ class _CalculatorField extends StatefulWidget {
 class _CalculatorFieldState extends State<_CalculatorField> {
   Future<void> _openCalculator() async {
     var expression = widget.controller.text;
+    const calculatorMinimumWidth = 622.0;
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
       constraints: BoxConstraints(
-        maxWidth: MediaQuery.sizeOf(context).width * .25,
+        minWidth: calculatorMinimumWidth,
+        maxWidth: math.max(
+          MediaQuery.sizeOf(context).width * .25,
+          calculatorMinimumWidth,
+        ),
       ),
       builder: (context) => _CalculatorPad(
         initialExpression: expression,
@@ -1543,13 +1550,19 @@ class _CalculatorPadState extends State<_CalculatorPad> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                expression.isEmpty ? '0' : expression,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.headlineSmall,
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 8,
+                vertical: 12,
+              ),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  expression.isEmpty ? '0' : expression,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
               ),
             ),
             const SizedBox(height: 2),
