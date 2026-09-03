@@ -1,6 +1,6 @@
 {
-    "name": "playsheet",
-    "short_name": "playsheet",
+    "name": "PlaySheet",
+    "short_name": "PlaySheet",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
