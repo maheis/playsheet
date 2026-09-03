@@ -38,5 +38,5 @@ Ein digitaler Spielblock, der die Verwaltung von Spielständen und Statistiken f
 - [ ] Geber markieren (neue Runde neuen Geber abfragen)
 - [ ] Spielerstatistik (Runden werden aktuell als Spiele gezählt)
 - [ ] Spieler in seiner Farbgebung darstellen (Anfangsbuchstabe in Kreis mit Spielerfarbe und Hover den Spielernamen?)
-- [ ] Abgeschlossen muss wiedereröffent werden, wenn spiel gelöscht wird!
+- [-] Abgeschlossen muss wiedereröffent werden, wenn spiel gelöscht wird!
 - [x] , entfernen und mit +-button für commit ersetzen

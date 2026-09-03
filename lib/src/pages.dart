@@ -962,6 +962,7 @@ class _SubroundTableState extends State<_SubroundTable> {
               _scoreField(
                 draftControllers,
                 id,
+                onChanged: (_) => setState(() {}),
                 onComplete: () => _recordRound(roundNumber),
                 onNextEmpty: () => _focusNextField(id),
               ),
