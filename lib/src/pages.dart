@@ -1365,45 +1365,6 @@ class _SubroundTableState extends State<_SubroundTable> {
                       ],
                     ),
                     for (final category in diceBlockCategories) ...[
-                      TableRow(
-                        children: [
-                          _tableCell(
-                            context,
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(diceBlockCategoryIcons[category],
-                                    size: 20),
-                                const SizedBox(width: 6),
-                                Text(category),
-                              ],
-                            ),
-                          ),
-                          ...widget.round.playerIds.map((playerId) {
-                            final value = completedScores[category]?[playerId];
-                            return _tableCell(
-                              context,
-                              value != null || widget.round.completed
-                                  ? Text(value?.toString() ?? '',
-                                      textAlign: TextAlign.center)
-                                  : _scoreField(
-                                      diceControllers,
-                                      '$category:$playerId',
-                                      onChanged: (value) =>
-                                          _handleDiceInputChanged(
-                                        category,
-                                        playerId,
-                                        value,
-                                      ),
-                                      onComplete: () => _recordDiceScore(
-                                        category,
-                                        playerId,
-                                      ),
-                                    ),
-                            );
-                          }),
-                        ],
-                      ),
                       if (category == 'Dreierpasch')
                         TableRow(
                           decoration: BoxDecoration(
@@ -1444,8 +1405,60 @@ class _SubroundTableState extends State<_SubroundTable> {
                             }),
                           ],
                         ),
+                      TableRow(
+                        children: [
+                          _tableCell(
+                            context,
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(diceBlockCategoryIcons[category],
+                                    size: 20),
+                                const SizedBox(width: 6),
+                                Text(category),
+                              ],
+                            ),
+                          ),
+                          ...widget.round.playerIds.map((playerId) {
+                            final value = completedScores[category]?[playerId];
+                            return _tableCell(
+                              context,
+                              value != null || widget.round.completed
+                                  ? Text(value?.toString() ?? '',
+                                      textAlign: TextAlign.center)
+                                  : _scoreField(
+                                      diceControllers,
+                                      '$category:$playerId',
+                                      onChanged: (value) =>
+                                          _handleDiceInputChanged(
+                                        category,
+                                        playerId,
+                                        value,
+                                      ),
+                                      onComplete: () => _recordDiceScore(
+                                        category,
+                                        playerId,
+                                      ),
+                                    ),
+                            );
+                          }),
+                        ],
+                      ),
                     ],
                     TableRow(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.secondaryContainer,
+                        border: Border(
+                          top: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 2,
+                          ),
+                          bottom: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 3,
+                          ),
+                        ),
+                      ),
                       children: [
                         _tableCell(context, const Text('Summe'), bold: true),
                         ...widget.round.playerIds.map((playerId) {
