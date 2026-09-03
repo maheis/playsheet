@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import 'app_controller.dart';
 import 'models.dart';
@@ -30,10 +31,14 @@ class HomePage extends StatelessWidget {
                 right: 4,
                 bottom: 4,
               ),
-              child: Image.asset(
-                'assets/icons/color_transparent_icon.png',
+              child: SvgPicture.asset(
+                'assets/icons/color_transparent_icon.svg',
                 width: 75,
                 height: 75,
+                colorFilter: ColorFilter.mode(
+                  Theme.of(context).colorScheme.primary,
+                  BlendMode.srcIn,
+                ),
               ),
             ),
             title: const Text('PlaySheet'),
