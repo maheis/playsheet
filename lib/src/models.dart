@@ -58,6 +58,7 @@ class GameRound {
     required this.gameBlockId,
     required this.playerIds,
     required this.createdAt,
+    this.maxPoints = 16,
     this.dealerPlayerId,
     this.completed = false,
     this.winnerPlayerIds = const [],
@@ -68,6 +69,7 @@ class GameRound {
   final String gameBlockId;
   final List<String> playerIds;
   final DateTime createdAt;
+  final int maxPoints;
   final String? dealerPlayerId;
   final bool completed;
   final List<String> winnerPlayerIds;

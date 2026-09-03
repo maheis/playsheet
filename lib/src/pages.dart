@@ -648,7 +648,10 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
       id: session?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
       gameBlockId: widget.block.id,
       name: gameName,
-      highWins: widget.block.id == 'ten_thousand' ? true : highWins,
+      highWins:
+          widget.block.id == 'ten_thousand' || widget.block.id == 'damjagen'
+              ? false
+              : highWins,
       playerIds: selectedPlayerIds.toList(),
       createdAt: session?.createdAt ?? DateTime.now(),
     );
@@ -889,11 +892,15 @@ class _SubroundTableState extends State<_SubroundTable> {
   final calculatorOpeners = <String, VoidCallback>{};
   final verticalScrollController = ScrollController();
   final horizontalScrollController = ScrollController();
+  late final TextEditingController maxPointsController;
+  final virginPlayers = <String>{};
+  String? throughMarchPlayer;
   bool editingLatest = false;
   bool selectingDealer = false;
 
   @override
   void dispose() {
+    maxPointsController.dispose();
     for (final controller in draftControllers.values) {
       controller.dispose();
     }
@@ -911,6 +918,9 @@ class _SubroundTableState extends State<_SubroundTable> {
   @override
   void initState() {
     super.initState();
+    maxPointsController = TextEditingController(
+      text: '${widget.round.maxPoints}',
+    );
     if (!widget.round.completed && widget.round.dealerPlayerId == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _selectDealer());
     }
@@ -1027,13 +1037,16 @@ class _SubroundTableState extends State<_SubroundTable> {
         if (int.tryParse(entry.value.text.trim()) != null)
           entry.key: int.parse(entry.value.text.trim()),
     };
+    final effectiveDraftScores = widget.round.gameBlockId == 'damjagen'
+        ? _damjagenScoresForDisplay(draftScores)
+        : draftScores;
     final totals = {
       for (final player in widget.round.playerIds)
         player: rounds.fold<int>(
               0,
               (sum, round) => sum + (round.scores[player] ?? 0),
             ) +
-            (draftScores[player] ?? 0),
+            (effectiveDraftScores[player] ?? 0),
     };
     final winningValue = rounds.isEmpty && draftScores.isEmpty
         ? null
@@ -1059,57 +1072,78 @@ class _SubroundTableState extends State<_SubroundTable> {
               ],
       ),
       body: LayoutBuilder(
-        builder: (context, constraints) => Scrollbar(
-          controller: verticalScrollController,
-          child: SingleChildScrollView(
-            controller: verticalScrollController,
-            padding: const EdgeInsets.all(12),
-            child: Scrollbar(
-              controller: horizontalScrollController,
-              notificationPredicate: (notification) => notification.depth == 1,
-              child: SingleChildScrollView(
-                controller: horizontalScrollController,
-                scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: Table(
-                      border: TableBorder(
-                        horizontalInside: BorderSide(
-                          color: Theme.of(context).dividerColor,
-                          width: .6,
-                        ),
-                        verticalInside: BorderSide(
-                          color: Theme.of(context).dividerColor,
-                          width: .6,
+        builder: (context, constraints) => Column(
+          children: [
+            if (widget.round.gameBlockId == 'damjagen')
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
+                child: TextField(
+                  controller: maxPointsController,
+                  enabled: !widget.round.completed,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Maximalpunkte',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+            Expanded(
+              child: Scrollbar(
+                controller: verticalScrollController,
+                child: SingleChildScrollView(
+                  controller: verticalScrollController,
+                  padding: const EdgeInsets.all(12),
+                  child: Scrollbar(
+                    controller: horizontalScrollController,
+                    notificationPredicate: (notification) =>
+                        notification.depth == 1,
+                    child: SingleChildScrollView(
+                      controller: horizontalScrollController,
+                      scrollDirection: Axis.horizontal,
+                      child: ConstrainedBox(
+                        constraints:
+                            BoxConstraints(minWidth: constraints.maxWidth),
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: Table(
+                            border: TableBorder(
+                              horizontalInside: BorderSide(
+                                color: Theme.of(context).dividerColor,
+                                width: .6,
+                              ),
+                              verticalInside: BorderSide(
+                                color: Theme.of(context).dividerColor,
+                                width: .6,
+                              ),
+                            ),
+                            defaultColumnWidth: const IntrinsicColumnWidth(),
+                            columnWidths: const {0: IntrinsicColumnWidth()},
+                            children: [
+                              _headerRow(context, rounds),
+                              _totalsRow(context, totals, winningValue),
+                              if (!widget.round.completed)
+                                widget.round.gameBlockId == 'damjagen'
+                                    ? _damjagenDraftRow(
+                                        context, rounds.length + 1)
+                                    : _draftRow(context, rounds.length + 1),
+                              ...rounds.map(
+                                (round) => _roundRow(
+                                  context,
+                                  round,
+                                  !widget.round.completed &&
+                                      rounds.first.id == round.id,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      defaultColumnWidth: const IntrinsicColumnWidth(),
-                      columnWidths: const {0: IntrinsicColumnWidth()},
-                      children: [
-                        _headerRow(context, rounds),
-                        _totalsRow(context, totals, winningValue),
-                        if (!widget.round.completed)
-                          _draftRow(
-                            context,
-                            rounds.length + 1,
-                          ),
-                        ...rounds.map(
-                          (round) => _roundRow(
-                            context,
-                            round,
-                            !widget.round.completed &&
-                                rounds.first.id == round.id,
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -1574,6 +1608,177 @@ class _SubroundTableState extends State<_SubroundTable> {
       return score >= 350 && score % 50 == 0;
     }
     return true;
+  }
+
+  Map<String, int> _damjagenScoresForDisplay(Map<String, int> baseScores) {
+    final maxPoints = int.tryParse(maxPointsController.text.trim());
+    final hasCompleteValidSum = maxPoints != null &&
+        baseScores.length == widget.round.playerIds.length &&
+        baseScores.values.fold<int>(0, (sum, score) => sum + score) ==
+            maxPoints;
+    if (!hasCompleteValidSum) return baseScores;
+    final multiplier = math.pow(2, virginPlayers.length).toInt();
+    return {
+      for (final id in widget.round.playerIds)
+        id: throughMarchPlayer != null && id != throughMarchPlayer
+            ? maxPoints
+            : virginPlayers.contains(id)
+                ? 0
+                : baseScores[id]! * multiplier,
+    };
+  }
+
+  TableRow _damjagenDraftRow(BuildContext context, int roundNumber) => TableRow(
+        children: [
+          _tableCell(
+            context,
+            IconButton(
+              tooltip: 'Runde $roundNumber aufzeichnen',
+              icon: const Icon(Icons.add_rounded),
+              onPressed: () => _recordDamjagenRound(roundNumber),
+            ),
+            padding: EdgeInsets.zero,
+          ),
+          ...widget.round.playerIds.map(
+            (id) => _tableCell(
+              context,
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _specialButton(
+                        context,
+                        label: 'J',
+                        selected: virginPlayers.contains(id),
+                        onPressed: () => _toggleVirgin(id),
+                      ),
+                      _specialButton(
+                        context,
+                        label: 'D',
+                        selected: throughMarchPlayer == id,
+                        onPressed: () => _toggleThroughMarch(id),
+                      ),
+                    ],
+                  ),
+                  _scoreField(
+                    draftControllers,
+                    id,
+                    onChanged: (_) => setState(() {}),
+                    onComplete: () => _recordDamjagenRound(roundNumber),
+                    onNextEmpty: () => _focusNextField(id),
+                  ),
+                ],
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+            ),
+          ),
+        ],
+      );
+
+  Widget _specialButton(
+    BuildContext context, {
+    required String label,
+    required bool selected,
+    required VoidCallback onPressed,
+  }) =>
+      TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          minimumSize: const Size(32, 30),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          foregroundColor: selected
+              ? Theme.of(context).colorScheme.onPrimary
+              : Theme.of(context).colorScheme.primary,
+          backgroundColor: selected
+              ? Theme.of(context).colorScheme.primary
+              : Colors.transparent,
+        ),
+        child: Text(label),
+      );
+
+  void _toggleVirgin(String playerId) {
+    if (virginPlayers.contains(playerId)) {
+      setState(() => virginPlayers.remove(playerId));
+      return;
+    }
+    if (virginPlayers.length >= widget.round.playerIds.length - 2) {
+      _showDamjagenError(
+          'Es sind höchstens Spieleranzahl minus 2 Jungfrauen erlaubt.');
+      return;
+    }
+    if (throughMarchPlayer == playerId) {
+      throughMarchPlayer = null;
+    }
+    setState(() => virginPlayers.add(playerId));
+  }
+
+  void _toggleThroughMarch(String playerId) {
+    setState(() {
+      throughMarchPlayer = throughMarchPlayer == playerId ? null : playerId;
+      if (throughMarchPlayer != null) virginPlayers.remove(playerId);
+    });
+  }
+
+  Future<void> _recordDamjagenRound(int roundNumber) async {
+    final maxPoints = int.tryParse(maxPointsController.text.trim());
+    if (maxPoints == null || maxPoints < 1) {
+      _showDamjagenError('Bitte eine gültige Maximalpunktzahl angeben.');
+      return;
+    }
+    final baseScores = <String, int>{};
+    for (final id in widget.round.playerIds) {
+      final score = int.tryParse(draftControllers[id]?.text.trim() ?? '');
+      if (score == null || score < 0) {
+        _showDamjagenError('Bitte für jeden Spieler einen Wert ab 0 eingeben.');
+        return;
+      }
+      baseScores[id] = score;
+    }
+    if (baseScores.values.fold<int>(0, (sum, score) => sum + score) !=
+        maxPoints) {
+      _showDamjagenError(
+        'Die eingegebenen Werte müssen zusammen $maxPoints ergeben.',
+      );
+      return;
+    }
+    final multiplier = math.pow(2, virginPlayers.length).toInt();
+    final scores = {
+      for (final id in widget.round.playerIds)
+        id: throughMarchPlayer != null && id != throughMarchPlayer
+            ? maxPoints
+            : virginPlayers.contains(id)
+                ? 0
+                : (baseScores[id]! * multiplier),
+    };
+    await widget.controller.updateGameRoundMaxPoints(
+      widget.round.id,
+      maxPoints,
+    );
+    await widget.controller.addGame(
+      GameRecord(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        roundId: widget.round.id,
+        sessionId: widget.session.id,
+        gameBlockId: widget.round.gameBlockId,
+        playerIds: widget.round.playerIds,
+        scores: scores,
+        playedAt: DateTime.now(),
+      ),
+    );
+    for (final controller in draftControllers.values) {
+      controller.clear();
+    }
+    setState(() {
+      virginPlayers.clear();
+      throughMarchPlayer = null;
+    });
+  }
+
+  void _showDamjagenError(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _showInvalidScoreError() {

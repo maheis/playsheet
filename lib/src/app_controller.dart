@@ -163,6 +163,7 @@ class AppController extends ChangeNotifier {
                   gameBlockId: round.gameBlockId,
                   playerIds: round.playerIds,
                   createdAt: round.createdAt,
+                  maxPoints: round.maxPoints,
                   dealerPlayerId: round.dealerPlayerId,
                   completed: false,
                 )
@@ -191,7 +192,30 @@ class AppController extends ChangeNotifier {
             gameBlockId: round.gameBlockId,
             playerIds: round.playerIds,
             createdAt: round.createdAt,
+            maxPoints: round.maxPoints,
             dealerPlayerId: dealerPlayerId,
+            completed: round.completed,
+            winnerPlayerIds: round.winnerPlayerIds,
+          )
+        else
+          round,
+    ];
+    await _repository.saveGameRounds(gameRounds);
+    notifyListeners();
+  }
+
+  Future<void> updateGameRoundMaxPoints(String id, int maxPoints) async {
+    gameRounds = [
+      for (final round in gameRounds)
+        if (round.id == id)
+          GameRound(
+            id: round.id,
+            sessionId: round.sessionId,
+            gameBlockId: round.gameBlockId,
+            playerIds: round.playerIds,
+            createdAt: round.createdAt,
+            maxPoints: maxPoints,
+            dealerPlayerId: round.dealerPlayerId,
             completed: round.completed,
             winnerPlayerIds: round.winnerPlayerIds,
           )
@@ -235,6 +259,7 @@ class AppController extends ChangeNotifier {
         gameBlockId: round.gameBlockId,
         playerIds: round.playerIds,
         createdAt: round.createdAt,
+        maxPoints: round.maxPoints,
         dealerPlayerId: round.dealerPlayerId,
         completed: true,
         winnerPlayerIds: winnerPlayerIds,
@@ -246,6 +271,7 @@ class AppController extends ChangeNotifier {
       gameBlockId: gameBlockId,
       playerIds: playerIds,
       createdAt: DateTime.now(),
+      maxPoints: 16,
     );
     gameRounds = [...completedRounds, round];
     await _repository.saveGameRounds(gameRounds);

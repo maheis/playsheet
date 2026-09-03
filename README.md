@@ -12,7 +12,7 @@ Ein digitaler Spielblock, der die Verwaltung von Spielständen und Statistiken f
 - [x] 3 +- 2 = 1
 - [x] 10Tausend
 - [x] Strichliste
-- [ ] Dam'jagen
+- [x] Dam'jagen
 - [ ] Würfelblock
 - [ ] Cluedo
 - [ ] Kingdomino
