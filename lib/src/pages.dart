@@ -774,6 +774,8 @@ class _SubroundTable extends StatefulWidget {
 class _SubroundTableState extends State<_SubroundTable> {
   final draftControllers = <String, TextEditingController>{};
   final roundControllers = <String, TextEditingController>{};
+  final calculatorFocusNodes = <String, FocusNode>{};
+  final calculatorOpeners = <String, VoidCallback>{};
   final verticalScrollController = ScrollController();
   final horizontalScrollController = ScrollController();
   bool editingLatest = false;
@@ -785,6 +787,9 @@ class _SubroundTableState extends State<_SubroundTable> {
     }
     for (final controller in roundControllers.values) {
       controller.dispose();
+    }
+    for (final focusNode in calculatorFocusNodes.values) {
+      focusNode.dispose();
     }
     verticalScrollController.dispose();
     horizontalScrollController.dispose();
@@ -930,6 +935,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                 draftControllers,
                 id,
                 onComplete: () => _recordRound(roundNumber),
+                onNextEmpty: () => _focusNextField(id),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 8),
             ),
@@ -1017,18 +1023,32 @@ class _SubroundTableState extends State<_SubroundTable> {
     int? value,
     ValueChanged<String>? onChanged,
     VoidCallback? onComplete,
+    VoidCallback? onNextEmpty,
   }) {
     final controller = controllers.putIfAbsent(
       key,
       () => TextEditingController(text: value == null ? '' : '$value'),
     );
+    final focusNode = calculatorFocusNodes.putIfAbsent(key, FocusNode.new);
     return _CalculatorField(
       controller: controller,
-      hintText: '0',
+      focusNode: focusNode,
+      onOpenChanged: (open) => calculatorOpeners[key] = open,
       allowNegative: widget.session.gameBlockId != 'ten_thousand',
       onChanged: onChanged,
       onComplete: onComplete,
+      onNextEmpty: onNextEmpty,
     );
+  }
+
+  void _focusNextField(String currentId) {
+    final currentIndex = widget.round.playerIds.indexOf(currentId);
+    final nextIndex = (currentIndex + 1) % widget.round.playerIds.length;
+    final nextId = widget.round.playerIds[nextIndex];
+    FocusScope.of(context).requestFocus(calculatorFocusNodes[nextId]);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) calculatorOpeners[nextId]?.call();
+    });
   }
 
   String _roundNumber(GameRecord round) {
@@ -1442,16 +1462,20 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
 class _CalculatorField extends StatefulWidget {
   const _CalculatorField({
     required this.controller,
+    this.focusNode,
+    this.onOpenChanged,
     this.onChanged,
     this.onComplete,
-    this.hintText,
+    this.onNextEmpty,
     this.allowNegative = true,
   });
 
   final TextEditingController controller;
+  final FocusNode? focusNode;
+  final ValueChanged<VoidCallback>? onOpenChanged;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onComplete;
-  final String? hintText;
+  final VoidCallback? onNextEmpty;
   final bool allowNegative;
 
   @override
@@ -1459,9 +1483,22 @@ class _CalculatorField extends StatefulWidget {
 }
 
 class _CalculatorFieldState extends State<_CalculatorField> {
+  @override
+  void initState() {
+    super.initState();
+    widget.onOpenChanged?.call(_openCalculator);
+  }
+
+  @override
+  void didUpdateWidget(covariant _CalculatorField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    widget.onOpenChanged?.call(_openCalculator);
+  }
+
   Future<void> _openCalculator() async {
     var expression = widget.controller.text;
     var completeAfterClose = false;
+    var nextEmptyAfterClose = false;
     final mediaQuery = MediaQuery.of(context);
     final availableHeight = math.max(0.0, mediaQuery.size.height - 200.0);
     final availableWidth = mediaQuery.size.width;
@@ -1517,6 +1554,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
             }
           },
           onComplete: () => completeAfterClose = true,
+          onNextEmpty: () => nextEmptyAfterClose = true,
         ),
       ),
     );
@@ -1527,11 +1565,13 @@ class _CalculatorFieldState extends State<_CalculatorField> {
     );
     widget.onChanged?.call(result);
     if (completeAfterClose) widget.onComplete?.call();
+    if (nextEmptyAfterClose) widget.onNextEmpty?.call();
   }
 
   @override
   Widget build(BuildContext context) => TextField(
         controller: widget.controller,
+        focusNode: widget.focusNode,
         readOnly: true,
         showCursor: false,
         textAlign: TextAlign.center,
@@ -1540,7 +1580,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
           isDense: true,
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(vertical: 8),
-        ).copyWith(hintText: widget.hintText),
+        ),
       );
 }
 
@@ -1550,12 +1590,14 @@ class _CalculatorPad extends StatefulWidget {
     required this.allowNegative,
     required this.onExpressionChanged,
     this.onComplete,
+    this.onNextEmpty,
   });
 
   final String initialExpression;
   final bool allowNegative;
   final ValueChanged<String> onExpressionChanged;
   final VoidCallback? onComplete;
+  final VoidCallback? onNextEmpty;
 
   @override
   State<_CalculatorPad> createState() => _CalculatorPadState();
@@ -1579,7 +1621,7 @@ class _CalculatorPadState extends State<_CalculatorPad> {
         if (expression.isNotEmpty) {
           expression = expression.substring(0, expression.length - 1);
         }
-      } else if (value == '()') {
+      } else if (value == '( )') {
         final opening = '('.allMatches(expression).length;
         final closing = ')'.allMatches(expression).length;
         expression += opening > closing ? ')' : '(';
@@ -1590,10 +1632,11 @@ class _CalculatorPadState extends State<_CalculatorPad> {
     });
   }
 
-  void _calculate({bool complete = false}) {
+  void _calculate({bool complete = false, bool nextEmpty = false}) {
     final result = _calculateExpression(expression);
     if (result == null) return;
     if (complete) widget.onComplete?.call();
+    if (nextEmpty) widget.onNextEmpty?.call();
     Navigator.pop(context, _formatCalculatorValue(result));
   }
 
@@ -1619,8 +1662,9 @@ class _CalculatorPadState extends State<_CalculatorPad> {
       ('3', colors.surfaceContainerHighest, colors.onSurface),
       ('+', colors.tertiaryContainer, colors.onTertiaryContainer),
       ('⌫', colors.surfaceContainerHighest, colors.onSurface),
-      ('↵', highlight, Colors.black),
+      ('0', colors.surfaceContainerHighest, colors.onSurface),
       ('+', colors.secondary, colors.onSecondary),
+      ('↵', highlight, Colors.black),
     ];
     return SafeArea(
       top: false,
@@ -1665,8 +1709,8 @@ class _CalculatorPadState extends State<_CalculatorPad> {
                   backgroundColor: button.$2,
                   foregroundColor: button.$3,
                   onPressed: button.$1 == '↵'
-                      ? _calculate
-                      : button.$1 == '+' && index == buttons.length - 1
+                      ? () => _calculate(nextEmpty: true)
+                      : button.$1 == '+' && index == buttons.length - 2
                           ? () => _calculate(complete: true)
                           : () => _press(button.$1),
                   child: button.$1 == '↵'
