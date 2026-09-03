@@ -830,14 +830,20 @@ class _SubroundTableState extends State<_SubroundTable> {
         .where((game) => game.roundId == widget.round.id)
         .toList()
       ..sort((first, second) => second.playedAt.compareTo(first.playedAt));
+    final draftScores = {
+      for (final entry in draftControllers.entries)
+        if (int.tryParse(entry.value.text.trim()) != null)
+          entry.key: int.parse(entry.value.text.trim()),
+    };
     final totals = {
       for (final player in widget.round.playerIds)
         player: rounds.fold<int>(
-          0,
-          (sum, round) => sum + (round.scores[player] ?? 0),
-        ),
+              0,
+              (sum, round) => sum + (round.scores[player] ?? 0),
+            ) +
+            (draftScores[player] ?? 0),
     };
-    final winningValue = rounds.isEmpty
+    final winningValue = rounds.isEmpty && draftScores.isEmpty
         ? null
         : widget.session.highWins
             ? totals.values
