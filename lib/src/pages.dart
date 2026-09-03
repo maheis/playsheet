@@ -694,7 +694,8 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
                       Text(
                         round.completed
                             ? 'Abgeschlossen • Sieger: ${_winnerNames(round)}'
-                            : 'Offen',
+                            : 'Offen • Aktueller Sieger: '
+                                '${_currentWinnerNames(round)}',
                       ),
                     ],
                   ),
@@ -725,6 +726,33 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
       : round.winnerPlayerIds
           .map((id) => widget.controller.playerById(id)?.name ?? 'Unbekannt')
           .join(', ');
+
+  String _currentWinnerNames(GameRound round) {
+    final games = widget.controller.games
+        .where((game) => game.roundId == round.id)
+        .toList();
+    if (games.isEmpty) return '–';
+    final totals = {
+      for (final playerId in round.playerIds)
+        playerId: games.fold<int>(
+          0,
+          (sum, game) => sum + (game.scores[playerId] ?? 0),
+        ),
+    };
+    final winningValue = widget.session.highWins
+        ? totals.values.reduce(
+            (first, second) => first > second ? first : second,
+          )
+        : totals.values.reduce(
+            (first, second) => first < second ? first : second,
+          );
+    final winnerIds = totals.entries
+        .where((entry) => entry.value == winningValue)
+        .map((entry) => entry.key);
+    return winnerIds
+        .map((id) => widget.controller.playerById(id)?.name ?? 'Unbekannt')
+        .join(', ');
+  }
 
   int _subroundCount(GameRound round) =>
       widget.controller.games.where((game) => game.roundId == round.id).length;
