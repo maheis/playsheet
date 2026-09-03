@@ -1,7 +1,6 @@
 # PlaySheet
 
-PlaySheet: Digitaler Spielblock
-PlaySheet: Digital Scorepad
+PlaySheet: Digitaler Spielblock / PlaySheet: Digital Scorepad
 
 ![Vorstellungsgrafik](.notes/vorstellungsgrafik.png)
 
