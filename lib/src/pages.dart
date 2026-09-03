@@ -1364,7 +1364,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                         ),
                       ],
                     ),
-                    for (final category in diceBlockCategories)
+                    for (final category in diceBlockCategories) ...[
                       TableRow(
                         children: [
                           _tableCell(
@@ -1404,40 +1404,47 @@ class _SubroundTableState extends State<_SubroundTable> {
                           }),
                         ],
                       ),
-                    TableRow(
-                      children: [
-                        _tableCell(
-                          context,
-                          Container(
+                      if (category == 'Dreierpasch')
+                        TableRow(
+                          decoration: BoxDecoration(
                             color: Theme.of(context)
                                 .colorScheme
                                 .secondaryContainer,
-                            child: const Text(
-                              'Bonus (über 63)',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                        ...widget.round.playerIds.map((playerId) {
-                          final bonus = upperTotalFor(playerId) > 63 ? 35 : 0;
-                          return _tableCell(
-                            context,
-                            Container(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .secondaryContainer,
-                              alignment: Alignment.center,
-                              child: Text(
-                                bonus == 0 ? '' : '$bonus',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                            border: Border(
+                              top: BorderSide(
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 2,
+                              ),
+                              bottom: BorderSide(
+                                color: Theme.of(context).colorScheme.primary,
+                                width: 3,
                               ),
                             ),
-                          );
-                        }),
-                      ],
-                    ),
+                          ),
+                          children: [
+                            _tableCell(
+                              context,
+                              const Text(
+                                'Bonus (über 63)',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            ...widget.round.playerIds.map((playerId) {
+                              final bonus =
+                                  upperTotalFor(playerId) > 63 ? 35 : 0;
+                              return _tableCell(
+                                context,
+                                Text(
+                                  bonus == 0 ? '' : '$bonus',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                    ],
                     TableRow(
                       children: [
                         _tableCell(context, const Text('Summe'), bold: true),
