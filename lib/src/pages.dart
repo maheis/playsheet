@@ -1379,6 +1379,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                                   : _scoreField(
                                       diceControllers,
                                       '$category:$playerId',
+                                      onChanged: (_) => setState(() {}),
                                       onComplete: () => _recordDiceScore(
                                         category,
                                         playerId,
@@ -1391,17 +1392,34 @@ class _SubroundTableState extends State<_SubroundTable> {
                     TableRow(
                       children: [
                         _tableCell(context, const Text('Summe'), bold: true),
-                        ...widget.round.playerIds.map(
-                          (playerId) => _tableCell(
+                        ...widget.round.playerIds.map((playerId) {
+                          final savedTotal = categoryGames.fold<int>(
+                            0,
+                            (sum, game) => sum + (game.scores[playerId] ?? 0),
+                          );
+                          final draftTotal = diceBlockCategories.fold<int>(
+                            0,
+                            (sum, category) =>
+                                sum +
+                                (int.tryParse(
+                                      diceControllers['$category:$playerId']
+                                              ?.text
+                                              .trim() ??
+                                          '',
+                                    ) ??
+                                    0),
+                          );
+                          return _tableCell(
                             context,
                             Text(
-                              '${categoryGames.fold<int>(0, (sum, game) => sum + (game.scores[playerId] ?? 0))}',
+                              '${savedTotal + draftTotal}',
                               textAlign: TextAlign.center,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                        ),
+                          );
+                        }),
                       ],
                     ),
                   ],
