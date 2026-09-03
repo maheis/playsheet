@@ -37,3 +37,6 @@ Ein digitaler Spielblock, der die Verwaltung von Spielständen und Statistiken f
 - [ ] Eingabe direkt live auf das Ergebnis rechnen
 - [ ] Geber markieren
 - [ ] Spielerstatistik (Runden werden aktuell als Spiele gezählt)
+- [ ] Spieler in seiner Farbgebung darstellen (Anfangsbuchstabe in Kreis mit Spielerfarbe und Hover den Spielernamen?)
+- [ ] Abgeschlossen muss wiedereröffent werden, wenn spiel gelöscht wird!
+- [x] , entfernen und mit +-button für commit ersetzen

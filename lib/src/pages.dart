@@ -926,7 +926,11 @@ class _SubroundTableState extends State<_SubroundTable> {
           ...widget.round.playerIds.map(
             (id) => _tableCell(
               context,
-              _scoreField(draftControllers, id),
+              _scoreField(
+                draftControllers,
+                id,
+                onComplete: () => _recordRound(roundNumber),
+              ),
               padding: const EdgeInsets.symmetric(horizontal: 8),
             ),
           ),
@@ -1012,6 +1016,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     String key, {
     int? value,
     ValueChanged<String>? onChanged,
+    VoidCallback? onComplete,
   }) {
     final controller = controllers.putIfAbsent(
       key,
@@ -1022,6 +1027,7 @@ class _SubroundTableState extends State<_SubroundTable> {
       hintText: '0',
       allowNegative: widget.session.gameBlockId != 'ten_thousand',
       onChanged: onChanged,
+      onComplete: onComplete,
     );
   }
 
@@ -1437,12 +1443,14 @@ class _CalculatorField extends StatefulWidget {
   const _CalculatorField({
     required this.controller,
     this.onChanged,
+    this.onComplete,
     this.hintText,
     this.allowNegative = true,
   });
 
   final TextEditingController controller;
   final ValueChanged<String>? onChanged;
+  final VoidCallback? onComplete;
   final String? hintText;
   final bool allowNegative;
 
@@ -1453,6 +1461,7 @@ class _CalculatorField extends StatefulWidget {
 class _CalculatorFieldState extends State<_CalculatorField> {
   Future<void> _openCalculator() async {
     var expression = widget.controller.text;
+    var completeAfterClose = false;
     final mediaQuery = MediaQuery.of(context);
     final availableHeight = math.max(0.0, mediaQuery.size.height - 200.0);
     final availableWidth = mediaQuery.size.width;
@@ -1507,6 +1516,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
               widget.onChanged?.call(text);
             }
           },
+          onComplete: () => completeAfterClose = true,
         ),
       ),
     );
@@ -1516,6 +1526,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
       selection: TextSelection.collapsed(offset: result.length),
     );
     widget.onChanged?.call(result);
+    if (completeAfterClose) widget.onComplete?.call();
   }
 
   @override
@@ -1538,11 +1549,13 @@ class _CalculatorPad extends StatefulWidget {
     required this.initialExpression,
     required this.allowNegative,
     required this.onExpressionChanged,
+    this.onComplete,
   });
 
   final String initialExpression;
   final bool allowNegative;
   final ValueChanged<String> onExpressionChanged;
+  final VoidCallback? onComplete;
 
   @override
   State<_CalculatorPad> createState() => _CalculatorPadState();
@@ -1577,9 +1590,10 @@ class _CalculatorPadState extends State<_CalculatorPad> {
     });
   }
 
-  void _calculate() {
+  void _calculate({bool complete = false}) {
     final result = _calculateExpression(expression);
     if (result == null) return;
+    if (complete) widget.onComplete?.call();
     Navigator.pop(context, _formatCalculatorValue(result));
   }
 
@@ -1604,10 +1618,9 @@ class _CalculatorPadState extends State<_CalculatorPad> {
       ('2', colors.surfaceContainerHighest, colors.onSurface),
       ('3', colors.surfaceContainerHighest, colors.onSurface),
       ('+', colors.tertiaryContainer, colors.onTertiaryContainer),
-      ('0', colors.surfaceContainerHighest, colors.onSurface),
-      (',', colors.surfaceContainerHighest, colors.onSurface),
       ('⌫', colors.surfaceContainerHighest, colors.onSurface),
       ('↵', highlight, Colors.black),
+      ('+', colors.secondary, colors.onSecondary),
     ];
     return SafeArea(
       top: false,
@@ -1651,8 +1664,11 @@ class _CalculatorPadState extends State<_CalculatorPad> {
                   label: button.$1,
                   backgroundColor: button.$2,
                   foregroundColor: button.$3,
-                  onPressed:
-                      button.$1 == '↵' ? _calculate : () => _press(button.$1),
+                  onPressed: button.$1 == '↵'
+                      ? _calculate
+                      : button.$1 == '+' && index == buttons.length - 1
+                          ? () => _calculate(complete: true)
+                          : () => _press(button.$1),
                   child: button.$1 == '↵'
                       ? const Icon(Icons.keyboard_return_rounded, size: 22)
                       : Text(
