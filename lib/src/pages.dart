@@ -1426,20 +1426,32 @@ class _SubroundTableState extends State<_SubroundTable> {
                               value != null || widget.round.completed
                                   ? Text(value?.toString() ?? '',
                                       textAlign: TextAlign.center)
-                                  : _scoreField(
-                                      diceControllers,
-                                      '$category:$playerId',
-                                      onChanged: (value) =>
-                                          _handleDiceInputChanged(
-                                        category,
-                                        playerId,
-                                        value,
-                                      ),
-                                      onComplete: () => _recordDiceScore(
-                                        category,
-                                        playerId,
-                                      ),
-                                    ),
+                                  : _diceFixedScore(category) != null
+                                      ? Checkbox(
+                                          value: false,
+                                          onChanged: (checked) {
+                                            if (checked == true) {
+                                              _recordDiceFixedScore(
+                                                category,
+                                                playerId,
+                                              );
+                                            }
+                                          },
+                                        )
+                                      : _scoreField(
+                                          diceControllers,
+                                          '$category:$playerId',
+                                          onChanged: (value) =>
+                                              _handleDiceInputChanged(
+                                            category,
+                                            playerId,
+                                            value,
+                                          ),
+                                          onComplete: () => _recordDiceScore(
+                                            category,
+                                            playerId,
+                                          ),
+                                        ),
                             );
                           }),
                         ],
@@ -1512,9 +1524,7 @@ class _SubroundTableState extends State<_SubroundTable> {
       return;
     }
     final maximum = _diceCategoryMaximum(category);
-    final fixedScore = _diceFixedScore(category);
-    if (value > maximum ||
-        (fixedScore != null && value != 0 && value != fixedScore)) {
+    if (!_isValidDiceScore(category, value)) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Für $category sind maximal $maximum Punkte möglich.'),
@@ -1538,6 +1548,24 @@ class _SubroundTableState extends State<_SubroundTable> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _recordDiceFixedScore(String category, String playerId) async {
+    final value = _diceFixedScore(category);
+    if (value == null) return;
+    await widget.controller.addGame(
+      GameRecord(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        roundId: widget.round.id,
+        sessionId: widget.session.id,
+        gameBlockId: widget.round.gameBlockId,
+        playerIds: widget.round.playerIds,
+        scores: {playerId: value},
+        playedAt: DateTime.now(),
+        categoryId: category,
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
   void _handleDiceInputChanged(
     String category,
     String playerId,
@@ -1546,9 +1574,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     final score = int.tryParse(value.trim());
     if (score == null) return;
     final maximum = _diceCategoryMaximum(category);
-    final fixedScore = _diceFixedScore(category);
-    if (score > maximum ||
-        (fixedScore != null && score != 0 && score != fixedScore)) {
+    if (!_isValidDiceScore(category, score)) {
       diceControllers['$category:$playerId']?.clear();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1584,6 +1610,14 @@ class _SubroundTableState extends State<_SubroundTable> {
     if (category == 'Große Straße') return 40;
     if (category == '5er Pasch') return 50;
     return null;
+  }
+
+  bool _isValidDiceScore(String category, int score) {
+    final upperIndex = _diceUpperCategories.indexOf(category);
+    if (upperIndex >= 0 && score % (upperIndex + 1) != 0) return false;
+    final fixedScore = _diceFixedScore(category);
+    return score <= _diceCategoryMaximum(category) &&
+        (fixedScore == null || score == fixedScore);
   }
 
   Future<void> _addTallyMark(String playerId) async {
