@@ -75,6 +75,7 @@ class LocalAppRepository implements AppRepository {
         'gameBlockId': round.gameBlockId,
         'playerIds': round.playerIds,
         'createdAt': round.createdAt.toIso8601String(),
+        'dealerPlayerId': round.dealerPlayerId,
         'completed': round.completed,
         'winnerPlayerIds': round.winnerPlayerIds,
       };
@@ -85,6 +86,7 @@ class LocalAppRepository implements AppRepository {
         gameBlockId: data['gameBlockId'] as String,
         playerIds: List<String>.from(data['playerIds'] as List<dynamic>),
         createdAt: DateTime.parse(data['createdAt'] as String),
+        dealerPlayerId: data['dealerPlayerId'] as String?,
         completed: data['completed'] as bool? ?? false,
         winnerPlayerIds: List<String>.from(
           (data['winnerPlayerIds'] as List<dynamic>?) ?? const [],

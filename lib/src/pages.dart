@@ -878,6 +878,7 @@ class _SubroundTableState extends State<_SubroundTable> {
   final verticalScrollController = ScrollController();
   final horizontalScrollController = ScrollController();
   bool editingLatest = false;
+  bool selectingDealer = false;
 
   @override
   void dispose() {
@@ -893,6 +894,79 @@ class _SubroundTableState extends State<_SubroundTable> {
     verticalScrollController.dispose();
     horizontalScrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.round.completed && widget.round.dealerPlayerId == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _selectDealer());
+    }
+  }
+
+  Future<void> _selectDealer() async {
+    if (selectingDealer || !mounted) return;
+    selectingDealer = true;
+    final dealerId = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Geber auswählen'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final playerId in widget.round.playerIds)
+                ListTile(
+                  leading: const Icon(Icons.person_outline_rounded),
+                  title: Text(_playerName(playerId)),
+                  onTap: () => Navigator.pop(dialogContext, playerId),
+                ),
+              ListTile(
+                leading: const Icon(Icons.remove_circle_outline_rounded),
+                title: const Text('Kein Geber / egal'),
+                onTap: () => Navigator.pop(dialogContext, ''),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    selectingDealer = false;
+    if (dealerId == null || !mounted) return;
+    await widget.controller.updateGameRoundDealer(widget.round.id, dealerId);
+    if (mounted) setState(() {});
+  }
+
+  String _playerName(String id) =>
+      widget.controller.playerById(id)?.name.isNotEmpty == true
+          ? widget.controller.playerById(id)!.name
+          : 'Unbekannt';
+
+  String? get _firstDealer => widget.controller.gameRounds
+      .firstWhere(
+        (round) => round.id == widget.round.id,
+        orElse: () => widget.round,
+      )
+      .dealerPlayerId;
+
+  String? _dealerForGame(GameRecord game, List<GameRecord> rounds) {
+    final firstDealer = _firstDealer;
+    if (firstDealer == null || widget.round.playerIds.isEmpty) return null;
+    final chronologicalIndex = rounds.length - 1 - rounds.indexOf(game);
+    final firstIndex = widget.round.playerIds.indexOf(firstDealer);
+    if (firstIndex < 0) return null;
+    return widget.round.playerIds[
+        (firstIndex + chronologicalIndex) % widget.round.playerIds.length];
+  }
+
+  String? _dealerForDraft(List<GameRecord> rounds) {
+    final firstDealer = _firstDealer;
+    if (firstDealer == null || widget.round.playerIds.isEmpty) return null;
+    final firstIndex = widget.round.playerIds.indexOf(firstDealer);
+    if (firstIndex < 0) return null;
+    return widget.round.playerIds[
+        (firstIndex + rounds.length) % widget.round.playerIds.length];
   }
 
   Future<void> _newRound() async {
@@ -999,10 +1073,13 @@ class _SubroundTableState extends State<_SubroundTable> {
                       defaultColumnWidth: const IntrinsicColumnWidth(),
                       columnWidths: const {0: IntrinsicColumnWidth()},
                       children: [
-                        _headerRow(context),
+                        _headerRow(context, rounds),
                         _totalsRow(context, totals, winningValue),
                         if (!widget.round.completed)
-                          _draftRow(context, rounds.length + 1),
+                          _draftRow(
+                            context,
+                            rounds.length + 1,
+                          ),
                         ...rounds.map(
                           (round) => _roundRow(
                             context,
@@ -1023,16 +1100,29 @@ class _SubroundTableState extends State<_SubroundTable> {
     );
   }
 
-  TableRow _headerRow(BuildContext context) => TableRow(
+  TableRow _headerRow(
+    BuildContext context,
+    List<GameRecord> rounds,
+  ) =>
+      TableRow(
         children: [
           _tableCell(context, const SizedBox.shrink(), bold: true),
-          ...widget.round.playerIds.map(
-            (id) => _tableCell(context, _playerHeader(context, id)),
-          ),
+          ...widget.round.playerIds.map((id) => _tableCell(
+                context,
+                _playerHeader(
+                  context,
+                  id,
+                  widget.round.completed
+                      ? rounds.isEmpty
+                          ? null
+                          : _dealerForGame(rounds.first, rounds)
+                      : _dealerForDraft(rounds),
+                ),
+              )),
         ],
       );
 
-  Widget _playerHeader(BuildContext context, String id) {
+  Widget _playerHeader(BuildContext context, String id, String? dealerId) {
     final player = widget.controller.playerById(id);
     final name = player?.name.isNotEmpty == true ? player!.name : 'Unbekannt';
     final primary = player?.primaryColorValue == null
@@ -1041,23 +1131,45 @@ class _SubroundTableState extends State<_SubroundTable> {
     final secondary = player?.secondaryColorValue == null
         ? (primary.computeLuminance() > .5 ? Colors.black : Colors.white)
         : Color(player!.secondaryColorValue!);
+    final isDealer = id == dealerId;
     return SizedBox(
       width: 72,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: primary,
-            child: Text(
-              name.characters.first.toUpperCase(),
-              style: TextStyle(
-                color: secondary,
-                fontWeight: FontWeight.bold,
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: isDealer
+                  ? Border.all(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 3,
+                    )
+                  : null,
+            ),
+            child: CircleAvatar(
+              radius: 18,
+              backgroundColor: primary,
+              child: Text(
+                name.characters.first.toUpperCase(),
+                style: TextStyle(
+                  color: secondary,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
           const SizedBox(height: 2),
+          if (isDealer)
+            Text(
+              'Geber',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 9,
+                  ),
+            ),
           Text(
             name,
             maxLines: 1,
@@ -1129,7 +1241,11 @@ class _SubroundTableState extends State<_SubroundTable> {
         ],
       );
 
-  TableRow _roundRow(BuildContext context, GameRecord round, bool isLatest) =>
+  TableRow _roundRow(
+    BuildContext context,
+    GameRecord round,
+    bool isLatest,
+  ) =>
       TableRow(
         children: [
           _tableCell(

@@ -163,6 +163,7 @@ class AppController extends ChangeNotifier {
                   gameBlockId: round.gameBlockId,
                   playerIds: round.playerIds,
                   createdAt: round.createdAt,
+                  dealerPlayerId: round.dealerPlayerId,
                   completed: false,
                 )
               : round,
@@ -177,6 +178,27 @@ class AppController extends ChangeNotifier {
   Future<void> deleteGame(String id) async {
     games = games.where((game) => game.id != id).toList();
     await _repository.saveGames(games);
+    notifyListeners();
+  }
+
+  Future<void> updateGameRoundDealer(String id, String dealerPlayerId) async {
+    gameRounds = [
+      for (final round in gameRounds)
+        if (round.id == id)
+          GameRound(
+            id: round.id,
+            sessionId: round.sessionId,
+            gameBlockId: round.gameBlockId,
+            playerIds: round.playerIds,
+            createdAt: round.createdAt,
+            dealerPlayerId: dealerPlayerId,
+            completed: round.completed,
+            winnerPlayerIds: round.winnerPlayerIds,
+          )
+        else
+          round,
+    ];
+    await _repository.saveGameRounds(gameRounds);
     notifyListeners();
   }
 
@@ -213,6 +235,7 @@ class AppController extends ChangeNotifier {
         gameBlockId: round.gameBlockId,
         playerIds: round.playerIds,
         createdAt: round.createdAt,
+        dealerPlayerId: round.dealerPlayerId,
         completed: true,
         winnerPlayerIds: winnerPlayerIds,
       );

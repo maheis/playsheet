@@ -36,7 +36,7 @@ Ein digitaler Spielblock, der die Verwaltung von Spielständen und Statistiken f
 - [x] Highlight-Fabe wie in VolleyAce verwenden! Aktuell ist Aktzent für Steuerelemente genutzt!
 - [ ] Settings-Page angleichen mit VolleyAce (Vorschau und Speicherbutton in VolleyAce entfernen!)
 - [x] Eingabe direkt live auf das Ergebnis (Summezeile) rechnen
-- [ ] Geber markieren (neue Runde neuen Geber abfragen)
+- [x] Geber markieren (neue Runde neuen Geber abfragen)
 - [x] Spielerstatistik (Runden werden aktuell als Spiele gezählt)
 - [x] Spieler in seiner Farbgebung darstellen (Anfangsbuchstabe in Kreis mit Spielerfarbe und darunter in sehr kleiner Schrift den Spielernamen)
 - [-] Abgeschlossen muss wiedereröffent werden, wenn spiel gelöscht wird!
