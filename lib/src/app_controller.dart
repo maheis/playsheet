@@ -58,6 +58,7 @@ class AppController extends ChangeNotifier {
                   idMapping[entry.key] ?? entry.key: entry.value,
               },
               playedAt: game.playedAt,
+              categoryId: game.categoryId,
             ),
           )
           .toList();

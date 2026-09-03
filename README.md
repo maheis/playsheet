@@ -13,7 +13,7 @@ Ein digitaler Spielblock, der die Verwaltung von Spielständen und Statistiken f
 - [x] 10Tausend
 - [x] Strichliste
 - [x] Dam'jagen
-- [ ] Würfelblock
+- [x] Würfelblock
 - [ ] Cluedo
 - [ ] Kingdomino
 
@@ -30,6 +30,7 @@ Ein digitaler Spielblock, der die Verwaltung von Spielständen und Statistiken f
 - [ ] Schafkopf
 - [ ] Doppelkopf
 - [ ] Virtueller Würfel
+- [ ] Dorfromantik
 
 ## ToDo
 

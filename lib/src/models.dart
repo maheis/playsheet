@@ -41,6 +41,7 @@ class GameRecord {
     required this.playerIds,
     required this.scores,
     required this.playedAt,
+    this.categoryId,
   });
   final String id;
   final String? roundId;
@@ -49,6 +50,7 @@ class GameRecord {
   final List<String> playerIds;
   final Map<String, int> scores;
   final DateTime playedAt;
+  final String? categoryId;
 }
 
 class GameRound {
@@ -135,12 +137,35 @@ const gameBlocks = <GameBlockDefinition>[
     color: Color(0xFFAED581),
   ),
   GameBlockDefinition(
+    id: 'dice_block',
+    name: 'Würfelblock',
+    description: 'Würfelblock mit Würfelkategorien und 5er Pasch.',
+    icon: Icons.casino_rounded,
+    color: Color(0xFF81C784),
+  ),
+  GameBlockDefinition(
     id: 'kingdomino',
     name: 'Kingdomino',
     description: 'Ein vorbereiteter Platz für Königreiche und Punkte.',
     icon: Icons.grid_view_rounded,
     color: Color(0xFF8FDCBE),
   ),
+];
+
+const diceBlockCategories = <String>[
+  'Einser',
+  'Zweier',
+  'Dreier',
+  'Vierer',
+  'Fünfer',
+  'Sechser',
+  'Dreierpasch',
+  'Viererpasch',
+  'Full House',
+  'Kleine Straße',
+  'Große Straße',
+  '5er Pasch',
+  'Chance',
 ];
 
 GameBlockDefinition gameBlockFor(String id) => gameBlocks.firstWhere(

@@ -118,6 +118,18 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
                     _ActionTile(
+                      icon: gameBlockFor('dice_block').icon,
+                      title: 'Würfelblock',
+                      detail: '${_gameCount(controller, 'dice_block')} Spiele',
+                      onTap: () => pushPage(
+                        context,
+                        GameSessionsPage(
+                          controller: controller,
+                          block: gameBlockFor('dice_block'),
+                        ),
+                      ),
+                    ),
+                    _ActionTile(
                       icon: gameBlockFor('damjagen').icon,
                       iconLabel: gameBlockFor('damjagen').iconLabel,
                       title: "Dam'jagen",
@@ -925,6 +937,7 @@ class _SubroundTableState extends State<_SubroundTable> {
   final calculatorOpeners = <String, VoidCallback>{};
   final verticalScrollController = ScrollController();
   final horizontalScrollController = ScrollController();
+  final diceControllers = <String, TextEditingController>{};
   final virginPlayers = <String>{};
   String? throughMarchPlayer;
   bool editingLatest = false;
@@ -936,6 +949,9 @@ class _SubroundTableState extends State<_SubroundTable> {
       controller.dispose();
     }
     for (final controller in roundControllers.values) {
+      controller.dispose();
+    }
+    for (final controller in diceControllers.values) {
       controller.dispose();
     }
     for (final focusNode in calculatorFocusNodes.values) {
@@ -1085,6 +1101,9 @@ class _SubroundTableState extends State<_SubroundTable> {
                 .reduce((first, second) => first < second ? first : second);
     if (widget.round.gameBlockId == 'tally') {
       return _buildTallyPage(context);
+    }
+    if (widget.round.gameBlockId == 'dice_block') {
+      return _buildDiceBlockPage(context);
     }
     return Scaffold(
       appBar: AppBar(
@@ -1276,6 +1295,119 @@ class _SubroundTableState extends State<_SubroundTable> {
         ),
       ),
     );
+  }
+
+  Widget _buildDiceBlockPage(BuildContext context) {
+    final categoryGames = widget.controller.games
+        .where(
+          (game) => game.roundId == widget.round.id && game.categoryId != null,
+        )
+        .toList();
+    final completedScores = <String, Map<String, int>>{
+      for (final category in diceBlockCategories)
+        category: {
+          for (final game in categoryGames)
+            if (game.categoryId == category) ...game.scores,
+        },
+    };
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.session.name),
+        actions: widget.round.completed
+            ? null
+            : [
+                IconButton(
+                  tooltip: 'Neue Runde',
+                  icon: const Icon(Icons.add_rounded),
+                  onPressed: _newRound,
+                ),
+              ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(12),
+        child: Table(
+          border: TableBorder.all(
+            color: Theme.of(context).dividerColor,
+            width: .6,
+          ),
+          defaultColumnWidth: const IntrinsicColumnWidth(),
+          children: [
+            TableRow(
+              children: [
+                _tableCell(context, const SizedBox.shrink()),
+                ...widget.round.playerIds.map(
+                  (id) => _tableCell(
+                      context, _playerHeader(context, id, _firstDealer)),
+                ),
+              ],
+            ),
+            for (final category in diceBlockCategories)
+              TableRow(
+                children: [
+                  _tableCell(context, Text(category)),
+                  ...widget.round.playerIds.map((playerId) {
+                    final value = completedScores[category]?[playerId];
+                    return _tableCell(
+                      context,
+                      value != null || widget.round.completed
+                          ? Text(value?.toString() ?? '',
+                              textAlign: TextAlign.center)
+                          : _scoreField(
+                              diceControllers,
+                              '$category:$playerId',
+                              onComplete: () => _recordDiceScore(
+                                category,
+                                playerId,
+                              ),
+                            ),
+                    );
+                  }),
+                ],
+              ),
+            TableRow(
+              children: [
+                _tableCell(context, const Text('Summe'), bold: true),
+                ...widget.round.playerIds.map(
+                  (playerId) => _tableCell(
+                    context,
+                    Text(
+                      '${categoryGames.fold<int>(0, (sum, game) => sum + (game.scores[playerId] ?? 0))}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _recordDiceScore(String category, String playerId) async {
+    final controller = diceControllers['$category:$playerId'];
+    final value = int.tryParse(controller?.text.trim() ?? '');
+    if (value == null || value < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bitte eine Punktzahl ab 0 eingeben.')),
+      );
+      return;
+    }
+    await widget.controller.addGame(
+      GameRecord(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        roundId: widget.round.id,
+        sessionId: widget.session.id,
+        gameBlockId: widget.round.gameBlockId,
+        playerIds: widget.round.playerIds,
+        scores: {playerId: value},
+        playedAt: DateTime.now(),
+        categoryId: category,
+      ),
+    );
+    controller?.clear();
+    if (mounted) setState(() {});
   }
 
   Future<void> _addTallyMark(String playerId) async {
