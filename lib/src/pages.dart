@@ -908,18 +908,50 @@ class _SubroundTableState extends State<_SubroundTable> {
         children: [
           _tableCell(context, const SizedBox.shrink(), bold: true),
           ...widget.round.playerIds.map(
-            (id) => _tableCell(
-              context,
-              Text(
-                widget.controller.playerById(id)?.name ?? 'Unbekannt',
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-              ),
-              bold: true,
-            ),
+            (id) => _tableCell(context, _playerHeader(context, id)),
           ),
         ],
       );
+
+  Widget _playerHeader(BuildContext context, String id) {
+    final player = widget.controller.playerById(id);
+    final name = player?.name.isNotEmpty == true ? player!.name : 'Unbekannt';
+    final primary = player?.primaryColorValue == null
+        ? Theme.of(context).colorScheme.primary
+        : Color(player!.primaryColorValue!);
+    final secondary = player?.secondaryColorValue == null
+        ? (primary.computeLuminance() > .5 ? Colors.black : Colors.white)
+        : Color(player!.secondaryColorValue!);
+    return SizedBox(
+      width: 72,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: primary,
+            child: Text(
+              name.characters.first.toUpperCase(),
+              style: TextStyle(
+                color: secondary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  fontSize: 9,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
 
   TableRow _totalsRow(
     BuildContext context,
