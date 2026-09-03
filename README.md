@@ -11,7 +11,7 @@ Ein digitaler Spielblock, der die Verwaltung von Spielständen und Statistiken f
 - [x] 1 + 2 = 3
 - [x] 3 +- 2 = 1
 - [x] 10Tausend
-- [ ] Strichliste
+- [x] Strichliste
 - [ ] Dam'jagen
 - [ ] Würfelblock
 - [ ] Cluedo

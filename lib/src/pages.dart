@@ -105,6 +105,18 @@ class HomePage extends StatelessWidget {
                         ),
                       ),
                     ),
+                    _ActionTile(
+                      icon: Icons.format_list_numbered_rounded,
+                      title: 'Strichliste',
+                      detail: '${_gameCount(controller, 'tally')} Spiele',
+                      onTap: () => pushPage(
+                        context,
+                        GameSessionsPage(
+                          controller: controller,
+                          block: gameBlockFor('tally'),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1030,6 +1042,9 @@ class _SubroundTableState extends State<_SubroundTable> {
                 .reduce((first, second) => first > second ? first : second)
             : totals.values
                 .reduce((first, second) => first < second ? first : second);
+    if (widget.round.gameBlockId == 'tally') {
+      return _buildTallyPage(context);
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.session.name),
@@ -1098,6 +1113,135 @@ class _SubroundTableState extends State<_SubroundTable> {
         ),
       ),
     );
+  }
+
+  Widget _buildTallyPage(BuildContext context) {
+    final tallyGames = widget.controller.games
+        .where((game) => game.roundId == widget.round.id)
+        .toList()
+      ..sort((first, second) => second.playedAt.compareTo(first.playedAt));
+    final counts = {
+      for (final playerId in widget.round.playerIds)
+        playerId: tallyGames.fold<int>(
+            0, (sum, game) => sum + (game.scores[playerId] ?? 0)),
+    };
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.session.name),
+        actions: widget.round.completed
+            ? null
+            : [
+                IconButton(
+                  tooltip: 'Neue Runde',
+                  icon: const Icon(Icons.add_rounded),
+                  onPressed: _newRound,
+                ),
+              ],
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          padding: const EdgeInsets.all(12),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth - 24),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Table(
+                  border: TableBorder(
+                    horizontalInside: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: .6,
+                    ),
+                    verticalInside: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                      width: .6,
+                    ),
+                  ),
+                  defaultColumnWidth: const IntrinsicColumnWidth(),
+                  children: [
+                    TableRow(
+                      children: [
+                        _tableCell(context, const SizedBox.shrink()),
+                        ...widget.round.playerIds.map(
+                          (id) => _tableCell(
+                            context,
+                            _playerHeader(
+                              context,
+                              id,
+                              widget.round.completed
+                                  ? tallyGames.isEmpty
+                                      ? null
+                                      : _dealerForGame(
+                                          tallyGames.first,
+                                          tallyGames,
+                                        )
+                                  : _dealerForDraft(tallyGames),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        _tableCell(context, const Text('Σ'), bold: true),
+                        ...widget.round.playerIds.map(
+                          (id) => _tableCell(
+                            context,
+                            Text(
+                              '${counts[id] ?? 0}',
+                              textAlign: TextAlign.center,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    TableRow(
+                      children: [
+                        _tableCell(context, const SizedBox.shrink()),
+                        ...widget.round.playerIds.map(
+                          (id) => _tableCell(
+                            context,
+                            IconButton(
+                              tooltip: 'Strich hinzufügen',
+                              icon: const Icon(
+                                Icons.add_rounded,
+                                color: Colors.orange,
+                              ),
+                              onPressed: widget.round.completed
+                                  ? null
+                                  : () => _addTallyMark(id),
+                            ),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addTallyMark(String playerId) async {
+    await widget.controller.addGame(
+      GameRecord(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        roundId: widget.round.id,
+        sessionId: widget.session.id,
+        gameBlockId: widget.round.gameBlockId,
+        playerIds: widget.round.playerIds,
+        scores: {playerId: 1},
+        playedAt: DateTime.now(),
+      ),
+    );
+    if (mounted) setState(() {});
   }
 
   TableRow _headerRow(
