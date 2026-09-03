@@ -106,6 +106,19 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
                     _ActionTile(
+                      icon: gameBlockFor('damjagen').icon,
+                      iconLabel: gameBlockFor('damjagen').iconLabel,
+                      title: "Dam'jagen",
+                      detail: '${_gameCount(controller, 'damjagen')} Spiele',
+                      onTap: () => pushPage(
+                        context,
+                        GameSessionsPage(
+                          controller: controller,
+                          block: gameBlockFor('damjagen'),
+                        ),
+                      ),
+                    ),
+                    _ActionTile(
                       icon: Icons.format_list_numbered_rounded,
                       title: 'Strichliste',
                       detail: '${_gameCount(controller, 'tally')} Spiele',
@@ -126,19 +139,6 @@ class HomePage extends StatelessWidget {
                         GameSessionsPage(
                           controller: controller,
                           block: gameBlockFor('dice_block'),
-                        ),
-                      ),
-                    ),
-                    _ActionTile(
-                      icon: gameBlockFor('damjagen').icon,
-                      iconLabel: gameBlockFor('damjagen').iconLabel,
-                      title: "Dam'jagen",
-                      detail: '${_gameCount(controller, 'damjagen')} Spiele',
-                      onTap: () => pushPage(
-                        context,
-                        GameSessionsPage(
-                          controller: controller,
-                          block: gameBlockFor('damjagen'),
                         ),
                       ),
                     ),

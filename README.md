@@ -42,3 +42,5 @@ Ein digitaler Spielblock, der die Verwaltung von Spielständen und Statistiken f
 - [x] Spieler in seiner Farbgebung darstellen (Anfangsbuchstabe in Kreis mit Spielerfarbe und darunter in sehr kleiner Schrift den Spielernamen)
 - [-] Abgeschlossen muss wiedereröffent werden, wenn spiel gelöscht wird!
 - [x] , entfernen und mit +-button für commit ersetzen
+- [x] sortierung der spiele nach alphabet
+- [ ] geber = startspieler = dran = aktuell, oder einfach highlighten!
