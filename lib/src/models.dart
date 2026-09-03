@@ -116,8 +116,9 @@ const gameBlocks = <GameBlockDefinition>[
     id: 'damjagen',
     name: "Dam'jagen",
     description: 'Punkte und Runden schnell auf dem Spielblock erfassen.',
-    icon: Icons.track_changes_rounded,
+    icon: Icons.style_rounded,
     color: Color(0xFF64B5F6),
+    iconLabel: '♠',
   ),
   GameBlockDefinition(
     id: 'ten_thousand',

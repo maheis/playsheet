@@ -118,7 +118,8 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
                     _ActionTile(
-                      icon: Icons.track_changes_rounded,
+                      icon: gameBlockFor('damjagen').icon,
+                      iconLabel: gameBlockFor('damjagen').iconLabel,
                       title: "Dam'jagen",
                       detail: '${_gameCount(controller, 'damjagen')} Spiele',
                       onTap: () => pushPage(
