@@ -291,7 +291,9 @@ class _GameSessionsPageState extends State<GameSessionsPage> {
           _ActionTile(
             icon: Icons.add_rounded,
             title: 'Spiel anlegen',
-            detail: 'Name, Gewinnart und Spieler festlegen',
+            detail: widget.block.id == 'damjagen'
+                ? 'Name, Maximalpunkte und Spieler festlegen'
+                : 'Name, Gewinnart und Spieler festlegen',
             onTap: _createGame,
           ),
           const SizedBox(height: 12),
@@ -499,7 +501,8 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
                   ),
                 ),
               ],
-              if (widget.block.id != 'ten_thousand') ...[
+              if (widget.block.id != 'ten_thousand' &&
+                  widget.block.id != 'damjagen') ...[
                 const SizedBox(height: 20),
                 Text('Gewinnart',
                     style: Theme.of(context).textTheme.titleMedium),
