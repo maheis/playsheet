@@ -1316,6 +1316,16 @@ class _SubroundTableState extends State<_SubroundTable> {
             if (game.categoryId == category) ...game.scores,
         },
     };
+    int upperTotalFor(String playerId) => _diceUpperCategories.fold<int>(
+          0,
+          (sum, category) =>
+              sum +
+              (completedScores[category]?[playerId] ??
+                  int.tryParse(
+                    diceControllers['$category:$playerId']?.text.trim() ?? '',
+                  ) ??
+                  0),
+        );
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.session.name),
@@ -1379,7 +1389,12 @@ class _SubroundTableState extends State<_SubroundTable> {
                                   : _scoreField(
                                       diceControllers,
                                       '$category:$playerId',
-                                      onChanged: (_) => setState(() {}),
+                                      onChanged: (value) =>
+                                          _handleDiceInputChanged(
+                                        category,
+                                        playerId,
+                                        value,
+                                      ),
                                       onComplete: () => _recordDiceScore(
                                         category,
                                         playerId,
@@ -1389,6 +1404,40 @@ class _SubroundTableState extends State<_SubroundTable> {
                           }),
                         ],
                       ),
+                    TableRow(
+                      children: [
+                        _tableCell(
+                          context,
+                          Container(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .secondaryContainer,
+                            child: const Text(
+                              'Bonus (über 63)',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                        ...widget.round.playerIds.map((playerId) {
+                          final bonus = upperTotalFor(playerId) > 63 ? 35 : 0;
+                          return _tableCell(
+                            context,
+                            Container(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .secondaryContainer,
+                              alignment: Alignment.center,
+                              child: Text(
+                                bonus == 0 ? '' : '$bonus',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
                     TableRow(
                       children: [
                         _tableCell(context, const Text('Summe'), bold: true),
@@ -1409,10 +1458,11 @@ class _SubroundTableState extends State<_SubroundTable> {
                                     ) ??
                                     0),
                           );
+                          final bonus = upperTotalFor(playerId) > 63 ? 35 : 0;
                           return _tableCell(
                             context,
                             Text(
-                              '${savedTotal + draftTotal}',
+                              '${savedTotal + draftTotal + bonus}',
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
@@ -1441,6 +1491,17 @@ class _SubroundTableState extends State<_SubroundTable> {
       );
       return;
     }
+    final maximum = _diceCategoryMaximum(category);
+    final fixedScore = _diceFixedScore(category);
+    if (value > maximum ||
+        (fixedScore != null && value != 0 && value != fixedScore)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Für $category sind maximal $maximum Punkte möglich.'),
+        ),
+      );
+      return;
+    }
     await widget.controller.addGame(
       GameRecord(
         id: DateTime.now().microsecondsSinceEpoch.toString(),
@@ -1455,6 +1516,54 @@ class _SubroundTableState extends State<_SubroundTable> {
     );
     controller?.clear();
     if (mounted) setState(() {});
+  }
+
+  void _handleDiceInputChanged(
+    String category,
+    String playerId,
+    String value,
+  ) {
+    final score = int.tryParse(value.trim());
+    if (score == null) return;
+    final maximum = _diceCategoryMaximum(category);
+    final fixedScore = _diceFixedScore(category);
+    if (score > maximum ||
+        (fixedScore != null && score != 0 && score != fixedScore)) {
+      diceControllers['$category:$playerId']?.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Für $category sind maximal $maximum Punkte möglich.'),
+        ),
+      );
+    }
+    setState(() {});
+  }
+
+  static const _diceUpperCategories = [
+    'Einser',
+    'Zweier',
+    'Dreier',
+    'Vierer',
+    'Fünfer',
+    'Sechser',
+  ];
+
+  int _diceCategoryMaximum(String category) {
+    final upperIndex = _diceUpperCategories.indexOf(category);
+    if (upperIndex >= 0) return (upperIndex + 1) * 5;
+    if (category == 'Full House') return 25;
+    if (category == 'Kleine Straße') return 30;
+    if (category == 'Große Straße') return 40;
+    if (category == '5er Pasch') return 50;
+    return 30;
+  }
+
+  int? _diceFixedScore(String category) {
+    if (category == 'Full House') return 25;
+    if (category == 'Kleine Straße') return 30;
+    if (category == 'Große Straße') return 40;
+    if (category == '5er Pasch') return 50;
+    return null;
   }
 
   Future<void> _addTallyMark(String playerId) async {
