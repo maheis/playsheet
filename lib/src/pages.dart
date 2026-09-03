@@ -218,15 +218,30 @@ class _GameSessionsPageState extends State<GameSessionsPage> {
       ),
     );
     if (session != null && mounted) {
-      await _openGame(session);
+      final hasRound = widget.controller.gameRounds.any(
+        (round) => round.sessionId == session.id,
+      );
+      GameRound? firstRound;
+      if (!hasRound) {
+        firstRound = await widget.controller.addGameRound(
+          sessionId: session.id,
+          gameBlockId: session.gameBlockId,
+          playerIds: session.playerIds,
+        );
+      }
+      await _openGame(session, initialRound: firstRound);
     }
     if (mounted) setState(() {});
   }
 
-  Future<void> _openGame(GameSession session) async {
+  Future<void> _openGame(GameSession session, {GameRound? initialRound}) async {
     await pushPage(
       context,
-      GameRoundsPage(controller: widget.controller, session: session),
+      GameRoundsPage(
+        controller: widget.controller,
+        session: session,
+        initialRound: initialRound,
+      ),
     );
     if (mounted) setState(() {});
   }
@@ -282,11 +297,25 @@ class _GameSessionsPageState extends State<GameSessionsPage> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      'Angelegt: ${_formatDate(session.createdAt)}',
+                    Row(
+                      children: [
+                        const Icon(Icons.event_outlined, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatDate(session.createdAt),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                     ),
-                    Text(
-                      'Zuletzt gespielt: ${_lastPlayedLabel(session)}',
+                    Row(
+                      children: [
+                        const Icon(Icons.play_arrow_rounded, size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          _lastPlayedLabel(session),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -630,17 +659,59 @@ class GameRoundsPage extends StatefulWidget {
     super.key,
     required this.controller,
     required this.session,
+    this.initialRound,
   });
 
   final AppController controller;
   final GameSession session;
+  final GameRound? initialRound;
 
   @override
   State<GameRoundsPage> createState() => _GameRoundsPageState();
 }
 
 class _GameRoundsPageState extends State<GameRoundsPage> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialRound != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openRound(widget.initialRound!);
+      });
+    }
+  }
+
+  Future<void> _openRound(GameRound round) async {
+    await pushPage(
+      context,
+      _SubroundTable(
+        controller: widget.controller,
+        session: widget.session,
+        round: round,
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
   Future<void> _newRound() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Neue Runde starten?'),
+        content: const Text('Soll eine neue Runde gestartet werden?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Starten'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
     final round = await widget.controller.addGameRound(
       sessionId: widget.session.id,
       gameBlockId: widget.session.gameBlockId,
@@ -824,6 +895,41 @@ class _SubroundTableState extends State<_SubroundTable> {
     super.dispose();
   }
 
+  Future<void> _newRound() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Neue Runde starten?'),
+        content: const Text('Soll eine neue Runde gestartet werden?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Abbrechen'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Starten'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final round = await widget.controller.addGameRound(
+      sessionId: widget.session.id,
+      gameBlockId: widget.session.gameBlockId,
+      playerIds: widget.session.playerIds,
+    );
+    if (!mounted) return;
+    await pushPage(
+      context,
+      _SubroundTable(
+        controller: widget.controller,
+        session: widget.session,
+        round: round,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final rounds = widget.controller.games
@@ -851,7 +957,18 @@ class _SubroundTableState extends State<_SubroundTable> {
             : totals.values
                 .reduce((first, second) => first < second ? first : second);
     return Scaffold(
-      appBar: AppBar(title: Text(widget.session.name)),
+      appBar: AppBar(
+        title: Text(widget.session.name),
+        actions: widget.round.completed
+            ? null
+            : [
+                IconButton(
+                  tooltip: 'Neue Runde',
+                  icon: const Icon(Icons.add_rounded),
+                  onPressed: _newRound,
+                ),
+              ],
+      ),
       body: LayoutBuilder(
         builder: (context, constraints) => Scrollbar(
           controller: verticalScrollController,
@@ -884,12 +1001,14 @@ class _SubroundTableState extends State<_SubroundTable> {
                       children: [
                         _headerRow(context),
                         _totalsRow(context, totals, winningValue),
-                        _draftRow(context, rounds.length + 1),
+                        if (!widget.round.completed)
+                          _draftRow(context, rounds.length + 1),
                         ...rounds.map(
                           (round) => _roundRow(
                             context,
                             round,
-                            rounds.first.id == round.id,
+                            !widget.round.completed &&
+                                rounds.first.id == round.id,
                           ),
                         ),
                       ],
@@ -1494,6 +1613,9 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
 
   Widget _statistics(BuildContext context) {
     final playerId = widget.player!.id;
+    final rounds = widget.controller.gameRounds
+        .where((round) => round.playerIds.contains(playerId))
+        .toList();
     final completedRounds = widget.controller.gameRounds
         .where(
           (round) => round.completed && round.playerIds.contains(playerId),
@@ -1510,7 +1632,7 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
         )
         .length;
     final opponentIds = <String>{
-      for (final round in completedRounds)
+      for (final round in rounds)
         ...round.playerIds.where((id) => id != playerId),
     }.toList();
     opponentIds.sort((first, second) => _playerName(first).compareTo(
@@ -1532,7 +1654,9 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
           contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.emoji_events_outlined),
           title: const Text('Gesamt'),
-          subtitle: Text('$wins Siege • $losses Niederlagen'),
+          subtitle: Text(
+            '${rounds.length} Spiele • $wins Siege • $losses Niederlagen',
+          ),
         ),
         if (opponentIds.isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -1540,25 +1664,27 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
           ...opponentIds.map(
             (opponentId) => _opponentStatistics(
               opponentId,
-              completedRounds,
+              rounds,
             ),
           ),
         ],
-        if (completedRounds.isEmpty)
-          const Text('Noch keine abgeschlossenen Spiele.'),
+        if (rounds.isEmpty) const Text('Noch keine Spiele.'),
       ],
     );
   }
 
   Widget _opponentStatistics(
     String opponentId,
-    List<GameRound> completedRounds,
+    List<GameRound> rounds,
   ) {
     var wins = 0;
     var losses = 0;
-    for (final round in completedRounds.where(
-      (round) => round.playerIds.contains(opponentId),
-    )) {
+    final opponentRounds = rounds
+        .where(
+          (round) => round.playerIds.contains(opponentId),
+        )
+        .toList();
+    for (final round in opponentRounds.where((round) => round.completed)) {
       final playerWon = round.winnerPlayerIds.contains(widget.player!.id);
       final opponentWon = round.winnerPlayerIds.contains(opponentId);
       if (playerWon && !opponentWon) wins++;
@@ -1568,7 +1694,9 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
       contentPadding: EdgeInsets.zero,
       leading: const Icon(Icons.person_outline_rounded),
       title: Text(_playerName(opponentId)),
-      subtitle: Text('$wins Siege • $losses Niederlagen'),
+      subtitle: Text(
+        '${opponentRounds.length} Spiele • $wins Siege • $losses Niederlagen',
+      ),
     );
   }
 

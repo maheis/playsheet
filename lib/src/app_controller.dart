@@ -137,7 +137,37 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> deleteGameRound(String id) async {
-    gameRounds = gameRounds.where((round) => round.id != id).toList();
+    final deletedRound = gameRounds.firstWhere((round) => round.id == id);
+    final lastCompletedRound = !deletedRound.completed
+        ? gameRounds
+            .where(
+            (round) =>
+                round.sessionId == deletedRound.sessionId &&
+                round.completed &&
+                round.id != id,
+          )
+            .fold<GameRound?>(null, (latest, round) {
+            if (latest == null || round.createdAt.isAfter(latest.createdAt)) {
+              return round;
+            }
+            return latest;
+          })
+        : null;
+    gameRounds = gameRounds
+        .where((round) => round.id != id)
+        .map(
+          (round) => round.id == lastCompletedRound?.id
+              ? GameRound(
+                  id: round.id,
+                  sessionId: round.sessionId,
+                  gameBlockId: round.gameBlockId,
+                  playerIds: round.playerIds,
+                  createdAt: round.createdAt,
+                  completed: false,
+                )
+              : round,
+        )
+        .toList();
     games = games.where((game) => game.roundId != id).toList();
     await _repository.saveGameRounds(gameRounds);
     await _repository.saveGames(games);
