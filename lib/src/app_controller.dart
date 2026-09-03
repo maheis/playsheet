@@ -291,7 +291,13 @@ class AppController extends ChangeNotifier {
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       gameBlockId: gameBlockId,
       name: name,
-      highWins: gameBlockId == 'ten_thousand' ? true : highWins,
+      highWins: gameBlockId == 'ten_thousand' ||
+              gameBlockId == 'damjagen' ||
+              gameBlockId == 'dice_block'
+          ? gameBlockId == 'dice_block'
+              ? true
+              : false
+          : highWins,
       playerIds: playerIds,
       createdAt: DateTime.now(),
       maxPoints: maxPoints,
@@ -303,12 +309,15 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> updateGameSession(GameSession session) async {
-    final normalizedSession = session.gameBlockId == 'ten_thousand'
+    final normalizedSession = session.gameBlockId == 'ten_thousand' ||
+            session.gameBlockId == 'damjagen' ||
+            session.gameBlockId == 'dice_block'
         ? GameSession(
             id: session.id,
             gameBlockId: session.gameBlockId,
             name: session.name,
-            highWins: true,
+            highWins: session.gameBlockId == 'ten_thousand' ||
+                session.gameBlockId == 'dice_block',
             playerIds: session.playerIds,
             createdAt: session.createdAt,
             maxPoints: session.maxPoints,

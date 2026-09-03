@@ -168,6 +168,22 @@ const diceBlockCategories = <String>[
   'Chance',
 ];
 
+const diceBlockCategoryIcons = <String, IconData>{
+  'Einser': Icons.looks_one_rounded,
+  'Zweier': Icons.looks_two_rounded,
+  'Dreier': Icons.looks_3_rounded,
+  'Vierer': Icons.looks_4_rounded,
+  'Fünfer': Icons.looks_5_rounded,
+  'Sechser': Icons.looks_6_rounded,
+  'Dreierpasch': Icons.filter_3_rounded,
+  'Viererpasch': Icons.filter_4_rounded,
+  'Full House': Icons.home_rounded,
+  'Kleine Straße': Icons.stairs_rounded,
+  'Große Straße': Icons.stairs_rounded,
+  '5er Pasch': Icons.casino_rounded,
+  'Chance': Icons.shuffle_rounded,
+};
+
 GameBlockDefinition gameBlockFor(String id) => gameBlocks.firstWhere(
       (block) => block.id == id,
       orElse: () => gameBlocks.first,

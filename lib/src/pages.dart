@@ -514,7 +514,8 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
                 ),
               ],
               if (widget.block.id != 'ten_thousand' &&
-                  widget.block.id != 'damjagen') ...[
+                  widget.block.id != 'damjagen' &&
+                  widget.block.id != 'dice_block') ...[
                 const SizedBox(height: 20),
                 Text('Gewinnart',
                     style: Theme.of(context).textTheme.titleMedium),
@@ -691,10 +692,13 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
       id: session?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
       gameBlockId: widget.block.id,
       name: gameName,
-      highWins:
-          widget.block.id == 'ten_thousand' || widget.block.id == 'damjagen'
-              ? false
-              : highWins,
+      highWins: widget.block.id == 'ten_thousand' ||
+              widget.block.id == 'damjagen' ||
+              widget.block.id == 'dice_block'
+          ? widget.block.id == 'dice_block'
+              ? true
+              : false
+          : highWins,
       playerIds: selectedPlayerIds.toList(),
       createdAt: session?.createdAt ?? DateTime.now(),
       maxPoints: int.tryParse(maxPoints.text.trim()) ?? 16,
@@ -965,7 +969,9 @@ class _SubroundTableState extends State<_SubroundTable> {
   @override
   void initState() {
     super.initState();
-    if (!widget.round.completed && widget.round.dealerPlayerId == null) {
+    if (!widget.round.completed &&
+        widget.round.dealerPlayerId == null &&
+        widget.round.gameBlockId != 'dice_block') {
       WidgetsBinding.instance.addPostFrameCallback((_) => _selectDealer());
     }
   }
@@ -1323,63 +1329,86 @@ class _SubroundTableState extends State<_SubroundTable> {
                 ),
               ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
-        child: Table(
-          border: TableBorder.all(
-            color: Theme.of(context).dividerColor,
-            width: .6,
-          ),
-          defaultColumnWidth: const IntrinsicColumnWidth(),
-          children: [
-            TableRow(
-              children: [
-                _tableCell(context, const SizedBox.shrink()),
-                ...widget.round.playerIds.map(
-                  (id) => _tableCell(
-                      context, _playerHeader(context, id, _firstDealer)),
-                ),
-              ],
-            ),
-            for (final category in diceBlockCategories)
-              TableRow(
-                children: [
-                  _tableCell(context, Text(category)),
-                  ...widget.round.playerIds.map((playerId) {
-                    final value = completedScores[category]?[playerId];
-                    return _tableCell(
-                      context,
-                      value != null || widget.round.completed
-                          ? Text(value?.toString() ?? '',
-                              textAlign: TextAlign.center)
-                          : _scoreField(
-                              diceControllers,
-                              '$category:$playerId',
-                              onComplete: () => _recordDiceScore(
-                                category,
-                                playerId,
-                              ),
-                            ),
-                    );
-                  }),
-                ],
-              ),
-            TableRow(
-              children: [
-                _tableCell(context, const Text('Summe'), bold: true),
-                ...widget.round.playerIds.map(
-                  (playerId) => _tableCell(
-                    context,
-                    Text(
-                      '${categoryGames.fold<int>(0, (sum, game) => sum + (game.scores[playerId] ?? 0))}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
+      body: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          padding: const EdgeInsets.all(12),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth - 24),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Table(
+                  border: TableBorder.all(
+                    color: Theme.of(context).dividerColor,
+                    width: .6,
                   ),
+                  defaultColumnWidth: const IntrinsicColumnWidth(),
+                  children: [
+                    TableRow(
+                      children: [
+                        _tableCell(context, const SizedBox.shrink()),
+                        ...widget.round.playerIds.map(
+                          (id) => _tableCell(
+                              context, _playerHeader(context, id, null)),
+                        ),
+                      ],
+                    ),
+                    for (final category in diceBlockCategories)
+                      TableRow(
+                        children: [
+                          _tableCell(
+                            context,
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(diceBlockCategoryIcons[category],
+                                    size: 20),
+                                const SizedBox(width: 6),
+                                Text(category),
+                              ],
+                            ),
+                          ),
+                          ...widget.round.playerIds.map((playerId) {
+                            final value = completedScores[category]?[playerId];
+                            return _tableCell(
+                              context,
+                              value != null || widget.round.completed
+                                  ? Text(value?.toString() ?? '',
+                                      textAlign: TextAlign.center)
+                                  : _scoreField(
+                                      diceControllers,
+                                      '$category:$playerId',
+                                      onComplete: () => _recordDiceScore(
+                                        category,
+                                        playerId,
+                                      ),
+                                    ),
+                            );
+                          }),
+                        ],
+                      ),
+                    TableRow(
+                      children: [
+                        _tableCell(context, const Text('Summe'), bold: true),
+                        ...widget.round.playerIds.map(
+                          (playerId) => _tableCell(
+                            context,
+                            Text(
+                              '${categoryGames.fold<int>(0, (sum, game) => sum + (game.scores[playerId] ?? 0))}',
+                              textAlign: TextAlign.center,
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );
