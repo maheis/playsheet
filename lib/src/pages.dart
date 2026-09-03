@@ -1478,6 +1478,8 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
             ),
             if (isEditing) ...[
               const SizedBox(height: 28),
+              _statistics(context),
+              const SizedBox(height: 28),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.delete_outline_rounded),
@@ -1489,6 +1491,91 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
           ],
         ),
       );
+
+  Widget _statistics(BuildContext context) {
+    final playerId = widget.player!.id;
+    final completedRounds = widget.controller.gameRounds
+        .where(
+          (round) => round.completed && round.playerIds.contains(playerId),
+        )
+        .toList();
+    final wins = completedRounds
+        .where((round) => round.winnerPlayerIds.contains(playerId))
+        .length;
+    final losses = completedRounds
+        .where(
+          (round) =>
+              !round.winnerPlayerIds.contains(playerId) &&
+              round.winnerPlayerIds.isNotEmpty,
+        )
+        .length;
+    final opponentIds = <String>{
+      for (final round in completedRounds)
+        ...round.playerIds.where((id) => id != playerId),
+    }.toList();
+    opponentIds.sort((first, second) => _playerName(first).compareTo(
+          _playerName(second),
+        ));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Statistik',
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium
+              ?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.emoji_events_outlined),
+          title: const Text('Gesamt'),
+          subtitle: Text('$wins Siege • $losses Niederlagen'),
+        ),
+        if (opponentIds.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          const Text('Gegen Gegenspieler'),
+          ...opponentIds.map(
+            (opponentId) => _opponentStatistics(
+              opponentId,
+              completedRounds,
+            ),
+          ),
+        ],
+        if (completedRounds.isEmpty)
+          const Text('Noch keine abgeschlossenen Spiele.'),
+      ],
+    );
+  }
+
+  Widget _opponentStatistics(
+    String opponentId,
+    List<GameRound> completedRounds,
+  ) {
+    var wins = 0;
+    var losses = 0;
+    for (final round in completedRounds.where(
+      (round) => round.playerIds.contains(opponentId),
+    )) {
+      final playerWon = round.winnerPlayerIds.contains(widget.player!.id);
+      final opponentWon = round.winnerPlayerIds.contains(opponentId);
+      if (playerWon && !opponentWon) wins++;
+      if (opponentWon && !playerWon) losses++;
+    }
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const Icon(Icons.person_outline_rounded),
+      title: Text(_playerName(opponentId)),
+      subtitle: Text('$wins Siege • $losses Niederlagen'),
+    );
+  }
+
+  String _playerName(String id) =>
+      widget.controller.playerById(id)?.name.isNotEmpty == true
+          ? widget.controller.playerById(id)!.name
+          : 'Unbekannt';
 
   Future<void> _saveChanges() {
     final player = widget.player;
@@ -2174,8 +2261,8 @@ class _PlayersPageState extends State<PlayersPage> {
     );
   }
 
-  int _gameCount(Player player) => widget.controller.games
-      .where((game) => game.playerIds.contains(player.id))
+  int _gameCount(Player player) => widget.controller.gameRounds
+      .where((round) => round.playerIds.contains(player.id))
       .length;
 }
 
