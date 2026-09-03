@@ -102,6 +102,7 @@ class LocalAppRepository implements AppRepository {
         'highWins': session.highWins,
         'playerIds': session.playerIds,
         'createdAt': session.createdAt.toIso8601String(),
+        'maxPoints': session.maxPoints,
       };
 
   GameSession _gameSessionFromData(Map<String, dynamic> data) => GameSession(
@@ -111,6 +112,7 @@ class LocalAppRepository implements AppRepository {
         highWins: data['highWins'] as bool,
         playerIds: List<String>.from(data['playerIds'] as List<dynamic>),
         createdAt: DateTime.parse(data['createdAt'] as String),
+        maxPoints: (data['maxPoints'] as num?)?.toInt() ?? 16,
       );
 
   @override

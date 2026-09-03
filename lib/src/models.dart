@@ -83,6 +83,7 @@ class GameSession {
     required this.highWins,
     required this.playerIds,
     required this.createdAt,
+    this.maxPoints = 16,
   });
 
   final String id;
@@ -91,6 +92,7 @@ class GameSession {
   final bool highWins;
   final List<String> playerIds;
   final DateTime createdAt;
+  final int maxPoints;
 }
 
 const gameBlocks = <GameBlockDefinition>[

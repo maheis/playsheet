@@ -284,6 +284,7 @@ class AppController extends ChangeNotifier {
     required String name,
     required bool highWins,
     required List<String> playerIds,
+    int maxPoints = 16,
   }) async {
     final session = GameSession(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
@@ -292,6 +293,7 @@ class AppController extends ChangeNotifier {
       highWins: gameBlockId == 'ten_thousand' ? true : highWins,
       playerIds: playerIds,
       createdAt: DateTime.now(),
+      maxPoints: maxPoints,
     );
     gameSessions = [...gameSessions, session];
     await _repository.saveGameSessions(gameSessions);
@@ -308,6 +310,7 @@ class AppController extends ChangeNotifier {
             highWins: true,
             playerIds: session.playerIds,
             createdAt: session.createdAt,
+            maxPoints: session.maxPoints,
           )
         : session;
     gameSessions = [

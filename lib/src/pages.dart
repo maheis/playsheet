@@ -106,18 +106,6 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
                     _ActionTile(
-                      icon: Icons.track_changes_rounded,
-                      title: "Dam'jagen",
-                      detail: '${_gameCount(controller, 'damjagen')} Spiele',
-                      onTap: () => pushPage(
-                        context,
-                        GameSessionsPage(
-                          controller: controller,
-                          block: gameBlockFor('damjagen'),
-                        ),
-                      ),
-                    ),
-                    _ActionTile(
                       icon: Icons.format_list_numbered_rounded,
                       title: 'Strichliste',
                       detail: '${_gameCount(controller, 'tally')} Spiele',
@@ -126,6 +114,18 @@ class HomePage extends StatelessWidget {
                         GameSessionsPage(
                           controller: controller,
                           block: gameBlockFor('tally'),
+                        ),
+                      ),
+                    ),
+                    _ActionTile(
+                      icon: Icons.track_changes_rounded,
+                      title: "Dam'jagen",
+                      detail: '${_gameCount(controller, 'damjagen')} Spiele',
+                      onTap: () => pushPage(
+                        context,
+                        GameSessionsPage(
+                          controller: controller,
+                          block: gameBlockFor('damjagen'),
                         ),
                       ),
                     ),
@@ -439,6 +439,7 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
   TextEditingController? playerNameFieldController;
   String typedPlayerName = '';
   bool highWins = true;
+  late final TextEditingController maxPoints;
   final selectedPlayerIds = <String>{};
   GameSession? session;
   bool closing = false;
@@ -447,11 +448,13 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
   void initState() {
     super.initState();
     name = TextEditingController();
+    maxPoints = TextEditingController(text: '16');
   }
 
   @override
   void dispose() {
     name.dispose();
+    maxPoints.dispose();
     super.dispose();
   }
 
@@ -483,6 +486,18 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
                   border: OutlineInputBorder(),
                 ),
               ),
+              if (widget.block.id == 'damjagen') ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: maxPoints,
+                  keyboardType: TextInputType.number,
+                  onChanged: (_) => _persistConfiguration(),
+                  decoration: const InputDecoration(
+                    labelText: 'Maximalpunkte',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
               if (widget.block.id != 'ten_thousand') ...[
                 const SizedBox(height: 20),
                 Text('Gewinnart',
@@ -666,6 +681,7 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
               : highWins,
       playerIds: selectedPlayerIds.toList(),
       createdAt: session?.createdAt ?? DateTime.now(),
+      maxPoints: int.tryParse(maxPoints.text.trim()) ?? 16,
     );
     if (session == null) {
       session = await widget.controller.addGameSession(
@@ -673,6 +689,7 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
         name: updated.name,
         highWins: updated.highWins,
         playerIds: updated.playerIds,
+        maxPoints: updated.maxPoints,
       );
     } else {
       session = updated;
@@ -904,7 +921,6 @@ class _SubroundTableState extends State<_SubroundTable> {
   final calculatorOpeners = <String, VoidCallback>{};
   final verticalScrollController = ScrollController();
   final horizontalScrollController = ScrollController();
-  late final TextEditingController maxPointsController;
   final virginPlayers = <String>{};
   String? throughMarchPlayer;
   bool editingLatest = false;
@@ -912,7 +928,6 @@ class _SubroundTableState extends State<_SubroundTable> {
 
   @override
   void dispose() {
-    maxPointsController.dispose();
     for (final controller in draftControllers.values) {
       controller.dispose();
     }
@@ -930,9 +945,6 @@ class _SubroundTableState extends State<_SubroundTable> {
   @override
   void initState() {
     super.initState();
-    maxPointsController = TextEditingController(
-      text: '${widget.round.maxPoints}',
-    );
     if (!widget.round.completed && widget.round.dealerPlayerId == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _selectDealer());
     }
@@ -1086,19 +1098,6 @@ class _SubroundTableState extends State<_SubroundTable> {
       body: LayoutBuilder(
         builder: (context, constraints) => Column(
           children: [
-            if (widget.round.gameBlockId == 'damjagen')
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
-                child: TextField(
-                  controller: maxPointsController,
-                  enabled: !widget.round.completed,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Maximalpunkte',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ),
             Expanded(
               child: Scrollbar(
                 controller: verticalScrollController,
@@ -1513,6 +1512,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     Map<String, TextEditingController> controllers,
     String key, {
     int? value,
+    bool enabled = true,
     ValueChanged<String>? onChanged,
     VoidCallback? onComplete,
     VoidCallback? onNextEmpty,
@@ -1527,6 +1527,7 @@ class _SubroundTableState extends State<_SubroundTable> {
       focusNode: focusNode,
       onOpenChanged: (open) => calculatorOpeners[key] = open,
       allowNegative: widget.session.gameBlockId != 'ten_thousand',
+      enabled: enabled,
       onChanged: onChanged,
       onComplete: onComplete,
       onNextEmpty: onNextEmpty,
@@ -1623,11 +1624,11 @@ class _SubroundTableState extends State<_SubroundTable> {
   }
 
   Map<String, int> _damjagenScoresForDisplay(Map<String, int> baseScores) {
-    final maxPoints = int.tryParse(maxPointsController.text.trim());
-    final hasCompleteValidSum = maxPoints != null &&
+    final maxPoints = widget.session.maxPoints;
+    final hasCompleteValidSum =
         baseScores.length == widget.round.playerIds.length &&
-        baseScores.values.fold<int>(0, (sum, score) => sum + score) ==
-            maxPoints;
+            baseScores.values.fold<int>(0, (sum, score) => sum + score) ==
+                maxPoints;
     if (!hasCompleteValidSum) return baseScores;
     final multiplier = math.pow(2, virginPlayers.length).toInt();
     return {
@@ -1677,6 +1678,8 @@ class _SubroundTableState extends State<_SubroundTable> {
                   _scoreField(
                     draftControllers,
                     id,
+                    enabled: !virginPlayers.contains(id) &&
+                        throughMarchPlayer == null,
                     onChanged: (_) => setState(() {}),
                     onComplete: () => _recordDamjagenRound(roundNumber),
                     onNextEmpty: () => _focusNextField(id),
@@ -1698,14 +1701,10 @@ class _SubroundTableState extends State<_SubroundTable> {
       TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
-          minimumSize: const Size(32, 30),
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          foregroundColor: selected
-              ? Theme.of(context).colorScheme.onPrimary
-              : Theme.of(context).colorScheme.primary,
-          backgroundColor: selected
-              ? Theme.of(context).colorScheme.primary
-              : Colors.transparent,
+          minimumSize: const Size(44, 40),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          foregroundColor: selected ? Colors.red : Colors.orange,
+          backgroundColor: Colors.transparent,
         ),
         child: Text(label),
       );
@@ -1723,33 +1722,42 @@ class _SubroundTableState extends State<_SubroundTable> {
     if (throughMarchPlayer == playerId) {
       throughMarchPlayer = null;
     }
+    draftControllers[playerId]?.clear();
     setState(() => virginPlayers.add(playerId));
   }
 
   void _toggleThroughMarch(String playerId) {
     setState(() {
-      throughMarchPlayer = throughMarchPlayer == playerId ? null : playerId;
-      if (throughMarchPlayer != null) virginPlayers.remove(playerId);
+      if (throughMarchPlayer == playerId) {
+        throughMarchPlayer = null;
+        return;
+      }
+      throughMarchPlayer = playerId;
+      virginPlayers.clear();
+      for (final controller in draftControllers.values) {
+        controller.clear();
+      }
     });
   }
 
   Future<void> _recordDamjagenRound(int roundNumber) async {
-    final maxPoints = int.tryParse(maxPointsController.text.trim());
-    if (maxPoints == null || maxPoints < 1) {
+    final maxPoints = widget.session.maxPoints;
+    if (maxPoints < 1) {
       _showDamjagenError('Bitte eine gültige Maximalpunktzahl angeben.');
       return;
     }
     final baseScores = <String, int>{};
     for (final id in widget.round.playerIds) {
-      final score = int.tryParse(draftControllers[id]?.text.trim() ?? '');
-      if (score == null || score < 0) {
-        _showDamjagenError('Bitte für jeden Spieler einen Wert ab 0 eingeben.');
+      final score = int.tryParse(draftControllers[id]?.text.trim() ?? '') ?? 0;
+      if (score < 0) {
+        _showDamjagenError('Bitte nur Werte ab 0 eingeben.');
         return;
       }
       baseScores[id] = score;
     }
-    if (baseScores.values.fold<int>(0, (sum, score) => sum + score) !=
-        maxPoints) {
+    if (throughMarchPlayer == null &&
+        baseScores.values.fold<int>(0, (sum, score) => sum + score) !=
+            maxPoints) {
       _showDamjagenError(
         'Die eingegebenen Werte müssen zusammen $maxPoints ergeben.',
       );
@@ -2227,6 +2235,7 @@ class _CalculatorField extends StatefulWidget {
     this.onComplete,
     this.onNextEmpty,
     this.allowNegative = true,
+    this.enabled = true,
   });
 
   final TextEditingController controller;
@@ -2236,6 +2245,7 @@ class _CalculatorField extends StatefulWidget {
   final VoidCallback? onComplete;
   final VoidCallback? onNextEmpty;
   final bool allowNegative;
+  final bool enabled;
 
   @override
   State<_CalculatorField> createState() => _CalculatorFieldState();
@@ -2331,10 +2341,11 @@ class _CalculatorFieldState extends State<_CalculatorField> {
   Widget build(BuildContext context) => TextField(
         controller: widget.controller,
         focusNode: widget.focusNode,
+        enabled: widget.enabled,
         readOnly: true,
         showCursor: false,
         textAlign: TextAlign.center,
-        onTap: _openCalculator,
+        onTap: widget.enabled ? _openCalculator : null,
         decoration: const InputDecoration(
           isDense: true,
           border: InputBorder.none,
