@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="de">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description"
+        content="PlaySheet ist der digitale Spielblock für Spielstände, Runden, Spieler und Statistiken.">
+    <meta name="theme-color" content="#171012">
+    <title>PlaySheet | Spielstand im Blick</title>
+    <link rel="icon" href="assets/color_transparent_icon.png">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <header class="site-header">
+        <a class="brand" href="#top" aria-label="PlaySheet Startseite">
+            <img src="assets/color_transparent_icon.png" alt="">
+            <span>PLAY<span>SHEET</span></span>
+        </a>
+        <button class="menu-toggle" aria-expanded="false" aria-controls="site-nav">Menü</button>
+        <nav id="site-nav" class="site-nav" aria-label="Hauptnavigation">
+            <a href="#spiel">Spiel</a>
+            <a href="#spieler">Spieler</a>
+            <a href="#statistik">Statistik</a>
+            <a class="nav-cta" href="https://github.com/maheis/playsheet">Projekt ansehen <span>↗</span></a>
+        </nav>
+    </header>
+
+    <main id="top">
+        <section class="hero wrap">
+            <div class="hero-copy reveal">
+                <p class="eyebrow"><i></i> Der digitale Spielblock</p>
+                <h1>Spiel an.<br><em>Alles im Blick.</em></h1>
+                <p class="hero-lede">PlaySheet hält Spielstände, Runden und Spieler zusammen. Schnell eingetragen, klar
+                    dargestellt und bereit für den nächsten Durchgang.</p>
+                <div class="hero-actions">
+                    <a class="button button-primary" href="#spiel">PlaySheet entdecken <span>↓</span></a>
+                    <a class="text-link" href="https://github.com/maheis/playsheet">Open-Source-Projekt
+                        <span>↗</span></a>
+                </div>
+                <div class="hero-meta"><span><b></b> Für Spieleabende</span><span><b></b> Offline
+                        nutzbar</span><span><b></b> Android & Desktop</span></div>
+            </div>
+            <div class="hero-art reveal delay-1">
+                <div class="round-chip"><small>RUNDE 06</small><strong>207</strong><span>MANFRED</span></div>
+                <img src="assets/vorstellungsgrafik.png"
+                    alt="PlaySheet mit Spielauswahl, Spielerübersicht, Rechner und Spielstatistiken">
+                <div class="score-line"></div>
+            </div>
+        </section>
+
+        <section id="spiel" class="score-strip">
+            <div class="wrap score-content reveal">
+                <div>
+                    <p class="eyebrow">Der Spielstand</p>
+                    <h2>Jede Runde<br><em>zählt.</em></h2>
+                </div>
+                <p>Keine Zettelwirtschaft, kein Kopfrechnen zwischen zwei Zügen. PlaySheet zeigt Summen live und macht
+                    den aktuellen Sieger sichtbar.</p>
+                <div class="live-score"><span>AKTUELLER STAND</span><strong>207</strong><i>:</i><strong
+                        class="second">164</strong><span>RUNDE 06</span></div>
+            </div>
+        </section>
+
+        <section id="spieler" class="features wrap">
+            <div class="section-heading reveal">
+                <p class="eyebrow">Für den ganzen Abend</p>
+                <h2>Vom ersten Zug<br><em>bis zur Statistik.</em></h2>
+            </div>
+            <div class="feature-grid">
+                <article class="feature-card coral reveal"><span class="feature-number">01 / SPIEL</span><b
+                        class="feature-icon">+</b>
+                    <div class="feature-visual score-visual"><strong>3</strong><span>Spielrunden</span><i>LIVE</i></div>
+                    <h3>Runden ohne Umwege</h3>
+                    <p>Spielstände direkt eintragen, per Rechner ausrechnen und mit einem Griff festhalten.</p>
+                </article>
+                <article class="feature-card mint reveal delay-1"><span class="feature-number">02 / SPIELER</span><b
+                        class="feature-icon">◉</b>
+                    <div class="feature-visual players-visual"><span class="avatar a">L</span><span
+                            class="avatar b">M</span><span class="avatar c">S</span><small>LEANA &nbsp; MANFRED &nbsp;
+                            SOULA</small></div>
+                    <h3>Spieler, wie sie sind</h3>
+                    <p>Eigene Farben, klare Namen und der richtige Überblick für jede Runde.</p>
+                </article>
+                <article id="statistik" class="feature-card yellow reveal delay-2"><span class="feature-number">03 /
+                        BILANZ</span><b class="feature-icon">↗</b>
+                    <div class="feature-visual stats-visual"><span>MANFRED <b>4 Siege</b></span><span>LEANA <b>1
+                                Niederlage</b></span><span>SOULA <b>4 Siege</b></span></div>
+                    <h3>Mehr als nur Punkte</h3>
+                    <p>Siege, Niederlagen und Duelle gegen Gegenspieler bleiben nachvollziehbar.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="quote-band">
+            <div class="wrap quote-content reveal">
+                <p class="quote-mark">“</p>
+                <blockquote>Der Abend bleibt<br><em>beim Spiel.</em></blockquote>
+                <p class="quote-caption">Weniger Schreiben.<br>Mehr spielen. Bessere Bilanz.</p>
+            </div>
+        </section>
+
+        <section class="closing wrap reveal">
+            <img src="assets/color_transparent_icon.png" alt="">
+            <p class="eyebrow">PlaySheet</p>
+            <h2>Dein Spiel.<br><em>Dein Überblick.</em></h2>
+            <a class="button button-primary" href="https://github.com/maheis/playsheet">Zum Projekt <span>↗</span></a>
+        </section>
+    </main>
+
+    <footer class="site-footer wrap"><span>PLAYSHEET</span><span>Der digitale Spielblock.</span><a href="../LICENSE">MIT
+            / Open Source</a></footer>
+    <script src="script.js"></script>
+</body>
+
+</html>
