@@ -3,6 +3,8 @@
 PlaySheet: Digitaler Spielblock
 PlaySheet: Digital Scorepad
 
+![Vorstellungsgrafik](.notes/vorstellungsgrafik.png)
+
 Ein digitaler Spielblock, der die Verwaltung von Spielständen und Statistiken für verschiedene Spiele ermöglicht. Spieler können ihre Ergebnisse speichern, neue Runden starten und verschiedene Spieloptionen anpassen. Spielstatistiken und Spielerprofile können erstellt und verwaltet werden.
 
 ## Spielstände
