@@ -59,6 +59,7 @@ class AppController extends ChangeNotifier {
               },
               playedAt: game.playedAt,
               categoryId: game.categoryId,
+              crossedOut: game.crossedOut,
             ),
           )
           .toList();

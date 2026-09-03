@@ -42,6 +42,7 @@ class GameRecord {
     required this.scores,
     required this.playedAt,
     this.categoryId,
+    this.crossedOut = false,
   });
   final String id;
   final String? roundId;
@@ -51,6 +52,7 @@ class GameRecord {
   final Map<String, int> scores;
   final DateTime playedAt;
   final String? categoryId;
+  final bool crossedOut;
 }
 
 class GameRound {

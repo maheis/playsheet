@@ -1313,7 +1313,15 @@ class _SubroundTableState extends State<_SubroundTable> {
       for (final category in diceBlockCategories)
         category: {
           for (final game in categoryGames)
-            if (game.categoryId == category) ...game.scores,
+            if (game.categoryId == category && !game.crossedOut) ...game.scores,
+        },
+    };
+    final crossedOutScores = <String, Set<String>>{
+      for (final category in diceBlockCategories)
+        category: {
+          for (final game in categoryGames)
+            if (game.categoryId == category && game.crossedOut)
+              ...game.scores.keys,
         },
     };
     int upperTotalFor(String playerId) => _diceUpperCategories.fold<int>(
@@ -1421,37 +1429,70 @@ class _SubroundTableState extends State<_SubroundTable> {
                           ),
                           ...widget.round.playerIds.map((playerId) {
                             final value = completedScores[category]?[playerId];
+                            final crossedOut = crossedOutScores[category]
+                                    ?.contains(playerId) ??
+                                false;
                             return _tableCell(
                               context,
-                              value != null || widget.round.completed
-                                  ? Text(value?.toString() ?? '',
-                                      textAlign: TextAlign.center)
-                                  : _diceFixedScore(category) != null
-                                      ? Checkbox(
-                                          value: false,
-                                          onChanged: (checked) {
-                                            if (checked == true) {
-                                              _recordDiceFixedScore(
-                                                category,
-                                                playerId,
-                                              );
-                                            }
-                                          },
+                              GestureDetector(
+                                onTap: crossedOut || value != null
+                                    ? () => _removeDiceScore(
+                                          category,
+                                          playerId,
                                         )
-                                      : _scoreField(
-                                          diceControllers,
-                                          '$category:$playerId',
-                                          onChanged: (value) =>
-                                              _handleDiceInputChanged(
-                                            category,
-                                            playerId,
-                                            value,
-                                          ),
-                                          onComplete: () => _recordDiceScore(
-                                            category,
-                                            playerId,
-                                          ),
+                                    : null,
+                                onLongPress: crossedOut
+                                    ? null
+                                    : () => _crossOutDiceField(
+                                          category,
+                                          playerId,
                                         ),
+                                child: crossedOut
+                                    ? const Text(
+                                        '---',
+                                        style: TextStyle(
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                        ),
+                                      )
+                                    : value != null
+                                        ? _diceFixedScore(category) != null
+                                            ? const Checkbox(
+                                                value: true,
+                                                onChanged: null,
+                                              )
+                                            : Text(
+                                                value.toString(),
+                                                textAlign: TextAlign.center,
+                                              )
+                                        : _diceFixedScore(category) != null
+                                            ? Checkbox(
+                                                value: false,
+                                                onChanged: (checked) {
+                                                  if (checked == true) {
+                                                    _recordDiceFixedScore(
+                                                      category,
+                                                      playerId,
+                                                    );
+                                                  }
+                                                },
+                                              )
+                                            : _scoreField(
+                                                diceControllers,
+                                                '$category:$playerId',
+                                                onChanged: (value) =>
+                                                    _handleDiceInputChanged(
+                                                  category,
+                                                  playerId,
+                                                  value,
+                                                ),
+                                                onComplete: () =>
+                                                    _recordDiceScore(
+                                                  category,
+                                                  playerId,
+                                                ),
+                                              ),
+                              ),
                             );
                           }),
                         ],
@@ -1561,6 +1602,45 @@ class _SubroundTableState extends State<_SubroundTable> {
         scores: {playerId: value},
         playedAt: DateTime.now(),
         categoryId: category,
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
+  GameRecord? _diceGameFor(String category, String playerId) {
+    for (final game in widget.controller.games) {
+      if (game.roundId == widget.round.id &&
+          game.categoryId == category &&
+          game.scores.containsKey(playerId)) {
+        return game;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _removeDiceScore(String category, String playerId) async {
+    final game = _diceGameFor(category, playerId);
+    if (game == null) return;
+    await widget.controller.deleteGame(game.id);
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _crossOutDiceField(String category, String playerId) async {
+    if (_diceGameFor(category, playerId) != null) {
+      await _removeDiceScore(category, playerId);
+    }
+    diceControllers['$category:$playerId']?.clear();
+    await widget.controller.addGame(
+      GameRecord(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        roundId: widget.round.id,
+        sessionId: widget.session.id,
+        gameBlockId: widget.round.gameBlockId,
+        playerIds: widget.round.playerIds,
+        scores: {playerId: 0},
+        playedAt: DateTime.now(),
+        categoryId: category,
+        crossedOut: true,
       ),
     );
     if (mounted) setState(() {});

@@ -54,6 +54,7 @@ class LocalAppRepository implements AppRepository {
         'scores': game.scores,
         'playedAt': game.playedAt.toIso8601String(),
         'categoryId': game.categoryId,
+        'crossedOut': game.crossedOut,
       };
 
   GameRecord _gameFromData(Map<String, dynamic> data) => GameRecord(
@@ -69,6 +70,7 @@ class LocalAppRepository implements AppRepository {
         ),
         playedAt: DateTime.parse(data['playedAt'] as String),
         categoryId: data['categoryId'] as String?,
+        crossedOut: data['crossedOut'] as bool? ?? false,
       );
 
   Map<String, dynamic> _gameRoundData(GameRound round) => {
