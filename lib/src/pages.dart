@@ -826,6 +826,26 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
                         '${round.playerIds.length} Spieler • '
                         '${_subroundCount(round)} Spielrunden',
                       ),
+                      Row(
+                        children: [
+                          const Icon(Icons.event_outlined, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Angelegt: ${_formatDate(round.createdAt)}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.play_arrow_rounded, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Zuletzt gespielt: ${_lastPlayedLabel(round)}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ),
                       Text(
                         round.completed
                             ? 'Abgeschlossen • Sieger: ${_winnerNames(round)}'
@@ -891,6 +911,24 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
 
   int _subroundCount(GameRound round) =>
       widget.controller.games.where((game) => game.roundId == round.id).length;
+
+  String _lastPlayedLabel(GameRound round) {
+    final playedAt = widget.controller.games
+        .where((game) => game.roundId == round.id)
+        .map((game) => game.playedAt)
+        .toList();
+    if (playedAt.isEmpty) return '–';
+    final lastPlayed = playedAt.reduce(
+      (first, second) => first.isAfter(second) ? first : second,
+    );
+    return _formatDate(lastPlayed);
+  }
+
+  String _formatDate(DateTime value) {
+    String twoDigits(int number) => number.toString().padLeft(2, '0');
+    return '${twoDigits(value.day)}.${twoDigits(value.month)}.'
+        '${value.year} ${twoDigits(value.hour)}:${twoDigits(value.minute)}';
+  }
 
   Future<void> _confirmDeleteRound(
     BuildContext context,
@@ -1066,12 +1104,13 @@ class _SubroundTableState extends State<_SubroundTable> {
       playerIds: widget.session.playerIds,
     );
     if (!mounted) return;
-    await pushPage(
-      context,
-      _SubroundTable(
-        controller: widget.controller,
-        session: widget.session,
-        round: round,
+    await Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => _SubroundTable(
+          controller: widget.controller,
+          session: widget.session,
+          round: round,
+        ),
       ),
     );
   }
@@ -2446,6 +2485,7 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
   late final TextEditingController name;
   late int? primaryColorValue;
   late int? secondaryColorValue;
+  DateTime? statisticsDate;
 
   bool get isEditing => widget.player != null;
 
@@ -2524,14 +2564,16 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
 
   Widget _statistics(BuildContext context) {
     final playerId = widget.player!.id;
-    final rounds = widget.controller.gameRounds
+    final allRounds = widget.controller.gameRounds
         .where((round) => round.playerIds.contains(playerId))
         .toList();
-    final completedRounds = widget.controller.gameRounds
-        .where(
-          (round) => round.completed && round.playerIds.contains(playerId),
-        )
-        .toList();
+    final rounds = statisticsDate == null
+        ? allRounds
+        : allRounds
+            .where(
+                (round) => _isSameDate(_lastPlayedAt(round), statisticsDate!))
+            .toList();
+    final completedRounds = rounds.where((round) => round.completed).toList();
     final wins = completedRounds
         .where((round) => round.winnerPlayerIds.contains(playerId))
         .length;
@@ -2563,8 +2605,27 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
         const SizedBox(height: 8),
         ListTile(
           contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.calendar_today_outlined),
+          title: Text(
+            statisticsDate == null
+                ? 'Alle Tage'
+                : 'Tag: ${_formatDate(statisticsDate!)}',
+          ),
+          subtitle: const Text('Statistikdatum auswählen'),
+          trailing: statisticsDate == null
+              ? null
+              : IconButton(
+                  tooltip: 'Datum zurücksetzen',
+                  icon: const Icon(Icons.clear_rounded),
+                  onPressed: () => setState(() => statisticsDate = null),
+                ),
+          onTap: _selectStatisticsDate,
+        ),
+        const SizedBox(height: 8),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
           leading: const Icon(Icons.emoji_events_outlined),
-          title: const Text('Gesamt'),
+          title: Text(statisticsDate == null ? 'Gesamt' : 'Ausgewählter Tag'),
           subtitle: Text(
             '${rounds.length} Spiele • $wins Siege • $losses Niederlagen',
           ),
@@ -2582,6 +2643,39 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
         if (rounds.isEmpty) const Text('Noch keine Spiele.'),
       ],
     );
+  }
+
+  Future<void> _selectStatisticsDate() async {
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: statisticsDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+    );
+    if (selected != null && mounted) {
+      setState(() => statisticsDate = selected);
+    }
+  }
+
+  DateTime _lastPlayedAt(GameRound round) {
+    final playedAt = widget.controller.games
+        .where((game) => game.roundId == round.id)
+        .map((game) => game.playedAt)
+        .toList();
+    if (playedAt.isEmpty) return round.createdAt;
+    return playedAt.reduce(
+      (first, second) => first.isAfter(second) ? first : second,
+    );
+  }
+
+  bool _isSameDate(DateTime first, DateTime second) =>
+      first.year == second.year &&
+      first.month == second.month &&
+      first.day == second.day;
+
+  String _formatDate(DateTime value) {
+    String twoDigits(int number) => number.toString().padLeft(2, '0');
+    return '${twoDigits(value.day)}.${twoDigits(value.month)}.${value.year}';
   }
 
   Widget _opponentStatistics(
