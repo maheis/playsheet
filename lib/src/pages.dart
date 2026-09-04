@@ -199,20 +199,29 @@ class _ActionTile extends StatelessWidget {
             padding: const EdgeInsets.all(12),
             child: Row(
               children: [
-                iconLabel == null
-                    ? Icon(
-                        icon,
-                        size: 32,
-                        color: Theme.of(context).iconTheme.color,
-                      )
-                    : Text(
-                        iconLabel!,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).iconTheme.color,
-                        ),
-                      ),
+                SizedBox(
+                  width: 79,
+                  child: Center(
+                    child: iconLabel == null
+                        ? Icon(
+                            icon,
+                            size: 32,
+                            color: Theme.of(context).iconTheme.color,
+                          )
+                        : iconLabel == tallyIconLabel
+                            ? _TallyIcon(
+                                color: Theme.of(context).iconTheme.color!,
+                              )
+                            : Text(
+                                iconLabel!,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).iconTheme.color,
+                                ),
+                              ),
+                  ),
+                ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -230,6 +239,34 @@ class _ActionTile extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      );
+}
+
+class _TallyIcon extends StatelessWidget {
+  const _TallyIcon({required this.color, this.size = 24});
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: size * 1.8,
+        height: size,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                for (var index = 0; index < 4; index++)
+                  Container(width: size / 10, height: size, color: color),
+              ],
+            ),
+            Transform.rotate(
+              angle: -0.35,
+              child: Container(height: size / 10, color: color),
+            ),
+          ],
         ),
       );
 }
@@ -321,13 +358,18 @@ class _GameSessionsPageState extends State<GameSessionsPage> {
                           widget.block.icon,
                           color: Theme.of(context).colorScheme.onPrimary,
                         )
-                      : Text(
-                          widget.block.iconLabel!,
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      : widget.block.iconLabel == tallyIconLabel
+                          ? _TallyIcon(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              size: 18,
+                            )
+                          : Text(
+                              widget.block.iconLabel!,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                 ),
                 title: Text(session.name),
                 subtitle: Column(

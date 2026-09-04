@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+const tallyIconLabel = '||||/';
+
 class Player {
   const Player({
     required this.id,
@@ -138,7 +140,7 @@ const gameBlocks = <GameBlockDefinition>[
     description: 'Ein flexibler Zähler für Spiele, Aufgaben und Ereignisse.',
     icon: Icons.format_list_numbered_rounded,
     color: Color(0xFFAED581),
-    iconLabel: '||||/',
+    iconLabel: tallyIconLabel,
   ),
   GameBlockDefinition(
     id: 'dice_block',
