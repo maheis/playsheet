@@ -44,6 +44,12 @@ class HomePage extends StatelessWidget {
             title: const Text('PlaySheet'),
             actions: [
               IconButton(
+                tooltip: 'Spieler',
+                icon: const Icon(Icons.people_alt_rounded),
+                onPressed: () =>
+                    pushPage(context, PlayersPage(controller: controller)),
+              ),
+              IconButton(
                 tooltip: 'Einstellungen',
                 icon: const Icon(Icons.settings_rounded),
                 onPressed: () => pushPage(
@@ -56,13 +62,6 @@ class HomePage extends StatelessWidget {
               LayoutBuilder(
                 builder: (context, _) => _TileGrid(
                   children: [
-                    _ActionTile(
-                      icon: Icons.people_alt_rounded,
-                      title: 'Spieler',
-                      detail: '${controller.players.length} angelegt',
-                      onTap: () => pushPage(
-                          context, PlayersPage(controller: controller)),
-                    ),
                     _ActionTile(
                       icon: Icons.looks_3_rounded,
                       iconLabel: gameBlockFor('one_plus_two').iconLabel,
