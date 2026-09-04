@@ -16,7 +16,7 @@ class AppSettings {
   });
 
   static const defaults = AppSettings(
-    fontFamily: 'OpenDyslexic',
+    fontFamily: 'Ubuntu',
     textScaleFactor: 1,
     useLightTheme: false,
     accentColorValue: 0xFFE57373,
@@ -112,7 +112,7 @@ class SettingsController extends ChangeNotifier {
   }
 
   AppSettings _fromJson(Map<String, dynamic> data) => AppSettings(
-        fontFamily: data['fontFamily'] as String? ?? 'OpenDyslexic',
+        fontFamily: data['fontFamily'] as String? ?? 'Ubuntu',
         textScaleFactor: ((data['textScaleFactor'] as num?)?.toDouble() ?? 1)
             .clamp(0.5, 1.6),
         useLightTheme: data['useLightTheme'] as bool? ?? false,
