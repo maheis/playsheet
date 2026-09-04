@@ -93,7 +93,8 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
                     _ActionTile(
-                      icon: Icons.casino_rounded,
+                      icon: gameBlockFor('ten_thousand').icon,
+                      iconLabel: gameBlockFor('ten_thousand').iconLabel,
                       title: '10Tausend',
                       detail:
                           '${_gameCount(controller, 'ten_thousand')} Spiele',
@@ -119,7 +120,8 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
                     _ActionTile(
-                      icon: Icons.format_list_numbered_rounded,
+                      icon: gameBlockFor('tally').icon,
+                      iconLabel: gameBlockFor('tally').iconLabel,
                       title: 'Strichliste',
                       detail: '${_gameCount(controller, 'tally')} Spiele',
                       onTap: () => pushPage(
@@ -1329,6 +1331,9 @@ class _SubroundTableState extends State<_SubroundTable> {
                               onPressed: widget.round.completed
                                   ? null
                                   : () => _addTallyMark(id),
+                              onLongPress: widget.round.completed
+                                  ? null
+                                  : () => _removeTallyMark(id),
                             ),
                             padding: EdgeInsets.zero,
                           ),
@@ -1755,6 +1760,25 @@ class _SubroundTableState extends State<_SubroundTable> {
         playedAt: DateTime.now(),
       ),
     );
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _removeTallyMark(String playerId) async {
+    final lastMark = widget.controller.games
+        .where(
+      (game) =>
+          game.roundId == widget.round.id &&
+          game.gameBlockId == 'tally' &&
+          game.scores[playerId] == 1,
+    )
+        .fold<GameRecord?>(null, (latest, game) {
+      if (latest == null || game.playedAt.isAfter(latest.playedAt)) {
+        return game;
+      }
+      return latest;
+    });
+    if (lastMark == null) return;
+    await widget.controller.deleteGame(lastMark.id);
     if (mounted) setState(() {});
   }
 

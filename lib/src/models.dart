@@ -130,6 +130,7 @@ const gameBlocks = <GameBlockDefinition>[
     description: 'Würfelrunden mit Zielpunktzahl und persönlichem Verlauf.',
     icon: Icons.casino_rounded,
     color: Color(0xFFFFB74D),
+    iconLabel: '⚄⚀',
   ),
   GameBlockDefinition(
     id: 'tally',
@@ -137,6 +138,7 @@ const gameBlocks = <GameBlockDefinition>[
     description: 'Ein flexibler Zähler für Spiele, Aufgaben und Ereignisse.',
     icon: Icons.format_list_numbered_rounded,
     color: Color(0xFFAED581),
+    iconLabel: '||||/',
   ),
   GameBlockDefinition(
     id: 'dice_block',
