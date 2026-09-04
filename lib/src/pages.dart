@@ -1195,6 +1195,8 @@ class _SubroundTableState extends State<_SubroundTable> {
                                 width: .6,
                               ),
                             ),
+                            defaultVerticalAlignment:
+                                TableCellVerticalAlignment.top,
                             defaultColumnWidth: const IntrinsicColumnWidth(),
                             columnWidths: const {0: IntrinsicColumnWidth()},
                             children: [
@@ -1271,6 +1273,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                       width: .6,
                     ),
                   ),
+                  defaultVerticalAlignment: TableCellVerticalAlignment.top,
                   defaultColumnWidth: const IntrinsicColumnWidth(),
                   children: [
                     TableRow(
@@ -1400,6 +1403,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                     color: Theme.of(context).dividerColor,
                     width: .6,
                   ),
+                  defaultVerticalAlignment: TableCellVerticalAlignment.top,
                   defaultColumnWidth: const IntrinsicColumnWidth(),
                   children: [
                     TableRow(
@@ -1964,7 +1968,7 @@ class _SubroundTableState extends State<_SubroundTable> {
   }) =>
       Container(
         constraints: const BoxConstraints(minHeight: 48),
-        alignment: Alignment.center,
+        alignment: Alignment.topCenter,
         padding:
             padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: DefaultTextStyle.merge(
