@@ -2579,7 +2579,14 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
             .toList();
     final completedRounds = rounds.where((round) => round.completed).toList();
     final wins = completedRounds
-        .where((round) => round.winnerPlayerIds.contains(playerId))
+        .where((round) =>
+            round.winnerPlayerIds.length == 1 &&
+            round.winnerPlayerIds.contains(playerId))
+        .length;
+    final draws = completedRounds
+        .where((round) =>
+            round.winnerPlayerIds.length > 1 &&
+            round.winnerPlayerIds.contains(playerId))
         .length;
     final losses = completedRounds
         .where(
@@ -2631,7 +2638,9 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
           leading: const Icon(Icons.emoji_events_outlined),
           title: Text(statisticsDate == null ? 'Gesamt' : 'Ausgewählter Tag'),
           subtitle: Text(
-            '${rounds.length} Spiele • $wins Siege • $losses Niederlagen',
+            '${rounds.length} Spiele • '
+            '${rounds.where((round) => !round.completed).length} offen • '
+            '$wins Siege • $draws Unentschieden • $losses Niederlagen',
           ),
         ),
         if (opponentIds.isNotEmpty) ...[
@@ -2688,6 +2697,7 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
   ) {
     var wins = 0;
     var losses = 0;
+    var draws = 0;
     final opponentRounds = rounds
         .where(
           (round) => round.playerIds.contains(opponentId),
@@ -2696,15 +2706,22 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
     for (final round in opponentRounds.where((round) => round.completed)) {
       final playerWon = round.winnerPlayerIds.contains(widget.player!.id);
       final opponentWon = round.winnerPlayerIds.contains(opponentId);
-      if (playerWon && !opponentWon) wins++;
-      if (opponentWon && !playerWon) losses++;
+      if (playerWon && !opponentWon && round.winnerPlayerIds.length == 1) {
+        wins++;
+      }
+      if (opponentWon && !playerWon && round.winnerPlayerIds.length == 1) {
+        losses++;
+      }
+      if (playerWon && opponentWon) draws++;
     }
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: const Icon(Icons.person_outline_rounded),
       title: Text(_playerName(opponentId)),
       subtitle: Text(
-        '${opponentRounds.length} Spiele • $wins Siege • $losses Niederlagen',
+        '${opponentRounds.length} Spiele • '
+        '${opponentRounds.where((round) => !round.completed).length} offen • '
+        '$wins Siege • $draws Unentschieden • $losses Niederlagen',
       ),
     );
   }
