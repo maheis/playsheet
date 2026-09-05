@@ -14,8 +14,6 @@ Ein digitaler und papierloser Spielblock, der die Verwaltung von Spielständen u
 - [x] Strichliste
 - [x] Dam'jagen
 - [x] Würfelblock
-- [ ] Cluedo
-- [ ] Kingdomino
 
 ## Spiele
 
@@ -24,6 +22,8 @@ Ein digitaler und papierloser Spielblock, der die Verwaltung von Spielständen u
 
 ## Ideensammlung
 
+- [ ] Cluedo
+- [ ] Kingdomino
 - [ ] Käsekästchen (Spiel)
 - [ ] TicTacToe (Spiel)
 - [ ] Skat
@@ -31,6 +31,10 @@ Ein digitaler und papierloser Spielblock, der die Verwaltung von Spielständen u
 - [ ] Doppelkopf
 - [ ] Virtueller Würfel
 - [ ] Dorfromantik
+- [ ] Schiffeversenken (Spiel)
+- [ ] Stratego (Spiel)
+- [ ] [MB Spiele Super 3](https://de.wikipedia.org/wiki/Super_3)
+- [ ] Flip7?
 
 ## ToDo
 
