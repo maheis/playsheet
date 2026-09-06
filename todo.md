@@ -10,11 +10,12 @@
 - [x] , entfernen und mit +-button für commit ersetzen
 - [x] sortierung der spiele nach alphabet
 - [ ] geber = startspieler = dran = aktuell, oder einfach highlighten!
-- [ ] tabelle valign
-- [ ] taschenrechner besser +mit circle, 0 größer, tasten daneben kleiner
-- [ ] neue runde soll auch + mit circle icon kriegen
-- [ ] neue runde soll.letzten geber vorschlagen
-- [ ] statistik nach spiel filtern
-- [ ] spiele namen als "spiel" speichern und vorschläge machen
-- [ ] kasten gehighlightrt lassen in dem man schreibt
-- [ ] 
+- [x] Tabelle valign - aktuell wird der Text (Werte) oben ausgerichtet, soll aber mittig sein
+- [x] Taschenrechner verbessern:
+  - [x] + button für "neue Runde" soll ein + Zeichen in einem Kreis sein.
+  - [x] 0 breiter (oval), Tasten links und rechts neben der 0 dafür kleiner (Halbe größe)
+- [x] Neuer Durchgang Button oben rechts soll auch + Zeichen in einem Kreis sein.
+- [x] Neuer Durchgang soll nächsten Geber vorschlagen, dabei soll der aktuelle Geber markiert werden im Dialog.
+- [x] Namen für Spiele sollen als Physische Spiele "gespeichert" werden und wenn ein neues Spiel erstellt wird, sollen Vorschläge basierend auf den gespeicherten Spielen gemacht werden. (Filter wie bei der Spielerauswahl)
+- [ ] Statistik nach Spiel filtern
+- [x] In der Tabelle das Textfeld gehighlightet lassen in dem man aktuell schreibt (wenn Taschenrechner offen ist)

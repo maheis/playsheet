@@ -534,15 +534,44 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              TextField(
-                controller: name,
-                autofocus: true,
-                onChanged: (_) => _persistConfiguration(),
-                decoration: const InputDecoration(
-                  labelText: 'Name',
-                  hintText: 'z. B. Spieleabend',
-                  border: OutlineInputBorder(),
-                ),
+              Autocomplete<String>(
+                initialValue: TextEditingValue(text: name.text),
+                optionsBuilder: (value) {
+                  final query = value.text.trim().toLowerCase();
+                  final names = widget.controller.gameSessions
+                      .map((session) => session.name.trim())
+                      .where((value) => value.isNotEmpty)
+                      .toSet()
+                      .toList()
+                    ..sort();
+                  if (query.isEmpty) return names;
+                  return names.where(
+                    (gameName) => gameName.toLowerCase().contains(query),
+                  );
+                },
+                onSelected: (value) {
+                  name.text = value;
+                  name.selection =
+                      TextSelection.collapsed(offset: name.text.length);
+                  _persistConfiguration();
+                },
+                fieldViewBuilder:
+                    (context, fieldController, focusNode, onSubmitted) {
+                  return TextField(
+                    controller: fieldController,
+                    focusNode: focusNode,
+                    autofocus: true,
+                    onChanged: (value) {
+                      name.text = value;
+                      _persistConfiguration();
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Name des physischen Spiels',
+                      hintText: 'z. B. Wizard',
+                      border: OutlineInputBorder(),
+                    ),
+                  );
+                },
               ),
               if (widget.block.id == 'damjagen') ...[
                 const SizedBox(height: 12),
@@ -849,7 +878,7 @@ class _GameRoundsPageState extends State<GameRoundsPage> {
           padding: const EdgeInsets.all(12),
           children: [
             _ActionTile(
-              icon: Icons.add_rounded,
+              icon: Icons.add_circle_outline_rounded,
               title: 'Neuer Durchgang',
               detail: 'Einen weiteren Durchgang beginnen',
               onTap: _newRound,
@@ -1060,30 +1089,74 @@ class _SubroundTableState extends State<_SubroundTable> {
   Future<void> _selectDealer() async {
     if (selectingDealer || !mounted) return;
     selectingDealer = true;
+    final previousRounds = widget.controller.gameRounds
+        .where((round) =>
+            round.sessionId == widget.round.sessionId &&
+            round.id != widget.round.id &&
+            round.dealerPlayerId != null)
+        .toList()
+      ..sort((first, second) => first.createdAt.compareTo(second.createdAt));
+    final currentDealerId =
+        previousRounds.isEmpty ? null : previousRounds.last.dealerPlayerId;
+    final currentDealerIndex = currentDealerId == null
+        ? -1
+        : widget.round.playerIds.indexOf(currentDealerId);
+    final suggestedDealerId = currentDealerIndex < 0
+        ? null
+        : widget.round.playerIds[
+            (currentDealerIndex + 1) % widget.round.playerIds.length];
     final dealerId = await showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Geber auswählen'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final playerId in widget.round.playerIds)
-                ListTile(
-                  leading: const Icon(Icons.person_outline_rounded),
-                  title: Text(_playerName(playerId)),
-                  onTap: () => Navigator.pop(dialogContext, playerId),
-                ),
-              ListTile(
-                leading: const Icon(Icons.remove_circle_outline_rounded),
-                title: const Text('Kein Geber / egal'),
-                onTap: () => Navigator.pop(dialogContext, ''),
+      builder: (dialogContext) {
+        var selectedDealerId = suggestedDealerId;
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Geber auswählen'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final playerId in widget.round.playerIds)
+                    ListTile(
+                      selected: selectedDealerId == playerId,
+                      selectedTileColor:
+                          Theme.of(context).colorScheme.secondaryContainer,
+                      leading: Icon(
+                        playerId == currentDealerId
+                            ? Icons.person_pin_circle_rounded
+                            : Icons.person_outline_rounded,
+                        color: playerId == currentDealerId
+                            ? Theme.of(context).colorScheme.primary
+                            : null,
+                      ),
+                      title: Text(_playerName(playerId)),
+                      subtitle: playerId == currentDealerId
+                          ? const Text('aktueller Geber')
+                          : playerId == suggestedDealerId
+                              ? const Text('Vorschlag für diesen Durchgang')
+                              : null,
+                      onTap: () =>
+                          setDialogState(() => selectedDealerId = playerId),
+                    ),
+                  ListTile(
+                    selected: selectedDealerId == '',
+                    leading: const Icon(Icons.remove_circle_outline_rounded),
+                    title: const Text('Kein Geber / egal'),
+                    onTap: () => setDialogState(() => selectedDealerId = ''),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, selectedDealerId),
+                child: const Text('Übernehmen'),
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
     selectingDealer = false;
     if (dealerId == null || !mounted) return;
@@ -1201,7 +1274,7 @@ class _SubroundTableState extends State<_SubroundTable> {
             : [
                 IconButton(
                   tooltip: 'Neue Runde',
-                  icon: const Icon(Icons.add_rounded),
+                  icon: const Icon(Icons.add_circle_outline_rounded),
                   onPressed: _newRound,
                 ),
               ],
@@ -1239,7 +1312,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                               ),
                             ),
                             defaultVerticalAlignment:
-                                TableCellVerticalAlignment.top,
+                                TableCellVerticalAlignment.middle,
                             defaultColumnWidth: const IntrinsicColumnWidth(),
                             columnWidths: const {0: IntrinsicColumnWidth()},
                             children: [
@@ -1291,7 +1364,7 @@ class _SubroundTableState extends State<_SubroundTable> {
             : [
                 IconButton(
                   tooltip: 'Neue Runde',
-                  icon: const Icon(Icons.add_rounded),
+                  icon: const Icon(Icons.add_circle_outline_rounded),
                   onPressed: _newRound,
                 ),
               ],
@@ -1316,7 +1389,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                       width: .6,
                     ),
                   ),
-                  defaultVerticalAlignment: TableCellVerticalAlignment.top,
+                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                   defaultColumnWidth: const IntrinsicColumnWidth(),
                   children: [
                     TableRow(
@@ -1430,7 +1503,7 @@ class _SubroundTableState extends State<_SubroundTable> {
             : [
                 IconButton(
                   tooltip: 'Neue Runde',
-                  icon: const Icon(Icons.add_rounded),
+                  icon: const Icon(Icons.add_circle_outline_rounded),
                   onPressed: _newRound,
                 ),
               ],
@@ -1449,7 +1522,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                     color: Theme.of(context).dividerColor,
                     width: .6,
                   ),
-                  defaultVerticalAlignment: TableCellVerticalAlignment.top,
+                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                   defaultColumnWidth: const IntrinsicColumnWidth(),
                   children: [
                     TableRow(
@@ -2033,7 +2106,7 @@ class _SubroundTableState extends State<_SubroundTable> {
   }) =>
       Container(
         constraints: const BoxConstraints(minHeight: 48),
-        alignment: Alignment.topCenter,
+        alignment: Alignment.center,
         padding:
             padding ?? const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
         child: DefaultTextStyle.merge(
@@ -2858,6 +2931,8 @@ class _CalculatorField extends StatefulWidget {
 }
 
 class _CalculatorFieldState extends State<_CalculatorField> {
+  bool calculatorOpen = false;
+
   @override
   void initState() {
     super.initState();
@@ -2871,6 +2946,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
   }
 
   Future<void> _openCalculator() async {
+    if (mounted) setState(() => calculatorOpen = true);
     var expression = widget.controller.text;
     var completeAfterClose = false;
     var nextEmptyAfterClose = false;
@@ -2933,6 +3009,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
         ),
       ),
     );
+    if (mounted) setState(() => calculatorOpen = false);
     if (!mounted || result == null) return;
     widget.controller.value = TextEditingValue(
       text: result,
@@ -2952,10 +3029,12 @@ class _CalculatorFieldState extends State<_CalculatorField> {
         showCursor: false,
         textAlign: TextAlign.center,
         onTap: widget.enabled ? _openCalculator : null,
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           isDense: true,
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 8),
+          filled: calculatorOpen,
+          fillColor: Theme.of(context).colorScheme.secondaryContainer,
+          contentPadding: const EdgeInsets.symmetric(vertical: 8),
         ),
       );
 }
@@ -3077,30 +3156,79 @@ class _CalculatorPadState extends State<_CalculatorPad> {
                 mainAxisSpacing: 2,
                 childAspectRatio: 1,
               ),
-              itemCount: buttons.length,
-              itemBuilder: (context, index) {
-                final button = buttons[index];
-                return _CalculatorButton(
-                  label: button.$1,
-                  backgroundColor: button.$2,
-                  foregroundColor: button.$3,
-                  onPressed: button.$1 == '↵'
-                      ? () => _calculate(nextEmpty: true)
-                      : button.$1 == '+' && index == buttons.length - 2
-                          ? () => _calculate(complete: true)
-                          : () => _press(button.$1),
-                  child: button.$1 == '↵'
-                      ? const Icon(Icons.keyboard_return_rounded, size: 22)
-                      : Text(
-                          button.$1,
-                          style: const TextStyle(fontSize: 18),
+              itemCount: 16,
+              itemBuilder: (context, index) =>
+                  _buildButton(buttons[index], isComplete: false),
+            ),
+            const SizedBox(height: 2),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final buttonSize =
+                    math.max(0.0, (constraints.maxWidth - 6) / 4);
+                return SizedBox(
+                  height: buttonSize,
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: buttonSize / 2,
+                        height: buttonSize / 2,
+                        child: _buildButton(buttons[16], isComplete: false),
+                      ),
+                      const SizedBox(width: 2),
+                      SizedBox(
+                        width: buttonSize * 2,
+                        height: buttonSize,
+                        child: _buildButton(
+                          buttons[17],
+                          isComplete: false,
+                          shape: const StadiumBorder(),
                         ),
+                      ),
+                      const SizedBox(width: 2),
+                      SizedBox(
+                        width: buttonSize / 2,
+                        height: buttonSize / 2,
+                        child: _buildButton(buttons[18], isComplete: true),
+                      ),
+                      const SizedBox(width: 2),
+                      SizedBox(
+                        width: buttonSize,
+                        height: buttonSize,
+                        child: _buildButton(buttons[19], isComplete: false),
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildButton(
+    (String, Color, Color) button, {
+    required bool isComplete,
+    OutlinedBorder shape = const CircleBorder(),
+  }) {
+    return _CalculatorButton(
+      label: button.$1,
+      backgroundColor: button.$2,
+      foregroundColor: button.$3,
+      shape: shape,
+      onPressed: button.$1 == '↵'
+          ? () => _calculate(nextEmpty: true)
+          : isComplete
+              ? () => _calculate(complete: true)
+              : () => _press(button.$1),
+      child: button.$1 == '↵'
+          ? const Icon(Icons.keyboard_return_rounded, size: 22)
+          : isComplete
+              ? const Icon(Icons.add_circle_outline_rounded, size: 22)
+              : button.$1 == '⌫'
+                  ? const Icon(Icons.backspace_outlined, size: 18)
+                  : Text(button.$1, style: const TextStyle(fontSize: 18)),
     );
   }
 }
@@ -3112,6 +3240,7 @@ class _CalculatorButton extends StatelessWidget {
     required this.foregroundColor,
     required this.onPressed,
     required this.child,
+    required this.shape,
   });
 
   final String label;
@@ -3119,13 +3248,14 @@ class _CalculatorButton extends StatelessWidget {
   final Color foregroundColor;
   final VoidCallback onPressed;
   final Widget child;
+  final OutlinedBorder shape;
 
   @override
   Widget build(BuildContext context) => FilledButton(
         style: FilledButton.styleFrom(
           backgroundColor: backgroundColor,
           foregroundColor: foregroundColor,
-          shape: const CircleBorder(),
+          shape: shape,
           padding: EdgeInsets.zero,
         ),
         onPressed: onPressed,
@@ -3488,34 +3618,77 @@ class _PlayersPageState extends State<PlayersPage> {
       .length;
 }
 
-class StatisticsPage extends StatelessWidget {
+class StatisticsPage extends StatefulWidget {
   const StatisticsPage({super.key, required this.controller});
   final AppController controller;
+
+  @override
+  State<StatisticsPage> createState() => _StatisticsPageState();
+}
+
+class _StatisticsPageState extends State<StatisticsPage> {
+  String selectedSessionId = '';
+
   @override
   Widget build(BuildContext context) {
+    final sessions = widget.controller.gameSessions.toList()
+      ..sort((first, second) => first.name.compareTo(second.name));
+    final filteredGames = selectedSessionId.isEmpty
+        ? widget.controller.games
+        : widget.controller.games.where(
+            (game) => game.sessionId == selectedSessionId,
+          );
     final totals = {
-      for (final player in controller.players)
-        player.id: controller.games.fold<int>(
+      for (final player in widget.controller.players)
+        player.id: filteredGames.fold<int>(
           0,
           (sum, game) => sum + (game.scores[player.id] ?? 0),
         ),
     };
     return Scaffold(
-      appBar: AppBar(title: const Text('Gesamtstatistik')),
+      appBar: AppBar(title: const Text('Statistik')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          DropdownButtonFormField<String>(
+            initialValue: selectedSessionId,
+            decoration: const InputDecoration(
+              labelText: 'Spiel filtern',
+              border: OutlineInputBorder(),
+            ),
+            items: [
+              const DropdownMenuItem(
+                value: '',
+                child: Text('Alle Spiele'),
+              ),
+              ...sessions.map(
+                (session) => DropdownMenuItem(
+                  value: session.id,
+                  child: Text(session.name),
+                ),
+              ),
+            ],
+            onChanged: (value) =>
+                setState(() => selectedSessionId = value ?? ''),
+          ),
+          const SizedBox(height: 16),
           Text(
-            'Alle Spieler',
+            selectedSessionId.isEmpty
+                ? 'Alle Spieler'
+                : sessions
+                        .where((session) => session.id == selectedSessionId)
+                        .map((session) => session.name)
+                        .firstOrNull ??
+                    'Spielstatistik',
             style: Theme.of(context)
                 .textTheme
                 .headlineSmall
                 ?.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          const Text('Gesammelte Punkte über alle gespeicherten Spiele.'),
+          const Text('Gesammelte Punkte für die gewählte Spielauswahl.'),
           const SizedBox(height: 16),
-          ...controller.players.map(
+          ...widget.controller.players.map(
             (player) => Card(
               child: ListTile(
                 leading: const Icon(Icons.insights_rounded),
@@ -3527,7 +3700,7 @@ class StatisticsPage extends StatelessWidget {
               ),
             ),
           ),
-          if (controller.players.isEmpty)
+          if (widget.controller.players.isEmpty)
             const Text('Noch keine Spieler vorhanden.'),
         ],
       ),
