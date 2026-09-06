@@ -764,13 +764,12 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
       id: session?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
       gameBlockId: widget.block.id,
       name: gameName,
-      highWins: widget.block.id == 'ten_thousand' ||
-              widget.block.id == 'damjagen' ||
-              widget.block.id == 'dice_block'
-          ? widget.block.id == 'dice_block'
+      highWins:
+          widget.block.id == 'ten_thousand' || widget.block.id == 'dice_block'
               ? true
-              : false
-          : highWins,
+              : widget.block.id == 'damjagen'
+                  ? false
+                  : highWins,
       playerIds: selectedPlayerIds.toList(),
       createdAt: session?.createdAt ?? DateTime.now(),
       maxPoints: int.tryParse(maxPoints.text.trim()) ?? 16,

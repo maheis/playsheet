@@ -20,3 +20,5 @@
 - [ ] Statistik nach Spiel filtern
 - [x] In der Tabelle das Textfeld gehighlightet lassen in dem man aktuell schreibt (wenn Taschenrechner offen ist)
 - [x] Reihenfolge von Spielern in der Tabelle nachträglich ändern können
+- [x] 10Tausend gewinnt hoch und nicht tief!
+- [ ] Dran optional weiter schieben wenn Feldwechsel ist (z.B. bei 10k)

@@ -17,6 +17,30 @@ class AppController extends ChangeNotifier {
     games = await _repository.loadGames();
     gameRounds = await _repository.loadGameRounds();
     gameSessions = await _repository.loadGameSessions();
+    final normalizedSessions = gameSessions
+        .map(
+          (session) => session.gameBlockId == 'ten_thousand'
+              ? GameSession(
+                  id: session.id,
+                  gameBlockId: session.gameBlockId,
+                  name: session.name,
+                  highWins: true,
+                  playerIds: session.playerIds,
+                  createdAt: session.createdAt,
+                  maxPoints: session.maxPoints,
+                )
+              : session,
+        )
+        .toList();
+    if (normalizedSessions.any((session) {
+      final current = gameSessions.firstWhere((item) => item.id == session.id);
+      return current.highWins != session.highWins;
+    })) {
+      gameSessions = normalizedSessions;
+      await _repository.saveGameSessions(gameSessions);
+    } else {
+      gameSessions = normalizedSessions;
+    }
     final usedIds = <String>{};
     final idMapping = <String, String>{};
     var nextId = 1;
@@ -317,13 +341,11 @@ class AppController extends ChangeNotifier {
       id: DateTime.now().microsecondsSinceEpoch.toString(),
       gameBlockId: gameBlockId,
       name: name,
-      highWins: gameBlockId == 'ten_thousand' ||
-              gameBlockId == 'damjagen' ||
-              gameBlockId == 'dice_block'
-          ? gameBlockId == 'dice_block'
-              ? true
-              : false
-          : highWins,
+      highWins: gameBlockId == 'ten_thousand' || gameBlockId == 'dice_block'
+          ? true
+          : gameBlockId == 'damjagen'
+              ? false
+              : highWins,
       playerIds: playerIds,
       createdAt: DateTime.now(),
       maxPoints: maxPoints,
@@ -343,7 +365,9 @@ class AppController extends ChangeNotifier {
             gameBlockId: session.gameBlockId,
             name: session.name,
             highWins: session.gameBlockId == 'ten_thousand' ||
-                session.gameBlockId == 'dice_block',
+                    session.gameBlockId == 'dice_block'
+                ? true
+                : false,
             playerIds: session.playerIds,
             createdAt: session.createdAt,
             maxPoints: session.maxPoints,
