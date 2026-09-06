@@ -1,4 +1,4 @@
-## ToDo
+# ToDo
 
 - [x] Highlight-Fabe wie in VolleyAce verwenden! Aktuell ist Aktzent für Steuerelemente genutzt!
 - [ ] Settings-Page angleichen mit VolleyAce (Vorschau und Speicherbutton in VolleyAce entfernen!)
@@ -9,7 +9,7 @@
 - [-] Abgeschlossen muss wiedereröffent werden, wenn spiel gelöscht wird!
 - [x] , entfernen und mit +-button für commit ersetzen
 - [x] sortierung der spiele nach alphabet
-- [ ] Geber = startspieler = dran = aktuell, oder einfach highlighten!
+- [x] Geber = startspieler = dran = aktuell, oder einfach highlighten!
 - [x] Tabelle valign - aktuell wird der Text (Werte) oben ausgerichtet, soll aber mittig sein
 - [x] Taschenrechner verbessern:
   - [x] + button für "neue Runde" soll ein + Zeichen in einem Kreis sein.
