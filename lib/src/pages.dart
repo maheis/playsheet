@@ -1164,6 +1164,64 @@ class _SubroundTableState extends State<_SubroundTable> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _reorderPlayers() async {
+    final orderedPlayerIds = await showDialog<List<String>>(
+      context: context,
+      builder: (dialogContext) {
+        var playerIds = [...widget.round.playerIds];
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Spielerreihenfolge'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ReorderableListView.builder(
+                shrinkWrap: true,
+                buildDefaultDragHandles: false,
+                itemCount: playerIds.length,
+                onReorderItem: (oldIndex, newIndex) {
+                  setDialogState(() {
+                    final playerId = playerIds.removeAt(oldIndex);
+                    playerIds.insert(newIndex, playerId);
+                  });
+                },
+                itemBuilder: (context, index) {
+                  final playerId = playerIds[index];
+                  return ListTile(
+                    key: ValueKey(playerId),
+                    leading: ReorderableDragStartListener(
+                      index: index,
+                      child: const Icon(Icons.drag_handle_rounded),
+                    ),
+                    title: Text(_playerName(playerId)),
+                  );
+                },
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Abbrechen'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, playerIds),
+                child: const Text('Übernehmen'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (orderedPlayerIds == null || !mounted) return;
+    widget.round.playerIds
+      ..clear()
+      ..addAll(orderedPlayerIds);
+    await widget.controller.updateGameRoundPlayerOrder(
+      widget.round.id,
+      orderedPlayerIds,
+    );
+    if (mounted) setState(() {});
+  }
+
   String _playerName(String id) =>
       widget.controller.playerById(id)?.name.isNotEmpty == true
           ? widget.controller.playerById(id)!.name
@@ -1269,15 +1327,19 @@ class _SubroundTableState extends State<_SubroundTable> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.session.name),
-        actions: widget.round.completed
-            ? null
-            : [
-                IconButton(
-                  tooltip: 'Neue Runde',
-                  icon: const Icon(Icons.add_circle_outline_rounded),
-                  onPressed: _newRound,
-                ),
-              ],
+        actions: [
+          if (!widget.round.completed)
+            IconButton(
+              tooltip: 'Neue Runde',
+              icon: const Icon(Icons.add_circle_outline_rounded),
+              onPressed: _newRound,
+            ),
+          IconButton(
+            tooltip: 'Spielerreihenfolge ändern',
+            icon: const Icon(Icons.swap_vert_rounded),
+            onPressed: _reorderPlayers,
+          ),
+        ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) => Column(
@@ -1359,15 +1421,19 @@ class _SubroundTableState extends State<_SubroundTable> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.session.name),
-        actions: widget.round.completed
-            ? null
-            : [
-                IconButton(
-                  tooltip: 'Neue Runde',
-                  icon: const Icon(Icons.add_circle_outline_rounded),
-                  onPressed: _newRound,
-                ),
-              ],
+        actions: [
+          if (!widget.round.completed)
+            IconButton(
+              tooltip: 'Neue Runde',
+              icon: const Icon(Icons.add_circle_outline_rounded),
+              onPressed: _newRound,
+            ),
+          IconButton(
+            tooltip: 'Spielerreihenfolge ändern',
+            icon: const Icon(Icons.swap_vert_rounded),
+            onPressed: _reorderPlayers,
+          ),
+        ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
@@ -1498,15 +1564,19 @@ class _SubroundTableState extends State<_SubroundTable> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.session.name),
-        actions: widget.round.completed
-            ? null
-            : [
-                IconButton(
-                  tooltip: 'Neue Runde',
-                  icon: const Icon(Icons.add_circle_outline_rounded),
-                  onPressed: _newRound,
-                ),
-              ],
+        actions: [
+          if (!widget.round.completed)
+            IconButton(
+              tooltip: 'Neue Runde',
+              icon: const Icon(Icons.add_circle_outline_rounded),
+              onPressed: _newRound,
+            ),
+          IconButton(
+            tooltip: 'Spielerreihenfolge ändern',
+            icon: const Icon(Icons.swap_vert_rounded),
+            onPressed: _reorderPlayers,
+          ),
+        ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(

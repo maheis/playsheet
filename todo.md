@@ -9,7 +9,7 @@
 - [-] Abgeschlossen muss wiedereröffent werden, wenn spiel gelöscht wird!
 - [x] , entfernen und mit +-button für commit ersetzen
 - [x] sortierung der spiele nach alphabet
-- [ ] geber = startspieler = dran = aktuell, oder einfach highlighten!
+- [ ] Geber = startspieler = dran = aktuell, oder einfach highlighten!
 - [x] Tabelle valign - aktuell wird der Text (Werte) oben ausgerichtet, soll aber mittig sein
 - [x] Taschenrechner verbessern:
   - [x] + button für "neue Runde" soll ein + Zeichen in einem Kreis sein.
@@ -19,3 +19,4 @@
 - [x] Namen für Spiele sollen als Physische Spiele "gespeichert" werden und wenn ein neues Spiel erstellt wird, sollen Vorschläge basierend auf den gespeicherten Spielen gemacht werden. (Filter wie bei der Spielerauswahl)
 - [ ] Statistik nach Spiel filtern
 - [x] In der Tabelle das Textfeld gehighlightet lassen in dem man aktuell schreibt (wenn Taschenrechner offen ist)
+- [x] Reihenfolge von Spielern in der Tabelle nachträglich ändern können

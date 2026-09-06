@@ -206,6 +206,31 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateGameRoundPlayerOrder(
+    String id,
+    List<String> playerIds,
+  ) async {
+    gameRounds = [
+      for (final round in gameRounds)
+        if (round.id == id)
+          GameRound(
+            id: round.id,
+            sessionId: round.sessionId,
+            gameBlockId: round.gameBlockId,
+            playerIds: [...playerIds],
+            createdAt: round.createdAt,
+            maxPoints: round.maxPoints,
+            dealerPlayerId: round.dealerPlayerId,
+            completed: round.completed,
+            winnerPlayerIds: round.winnerPlayerIds,
+          )
+        else
+          round,
+    ];
+    await _repository.saveGameRounds(gameRounds);
+    notifyListeners();
+  }
+
   Future<void> updateGameRoundMaxPoints(String id, int maxPoints) async {
     gameRounds = [
       for (final round in gameRounds)
