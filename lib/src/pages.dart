@@ -1104,11 +1104,13 @@ class _SubroundTableState extends State<_SubroundTable> {
         ? null
         : widget.round.playerIds[
             (currentDealerIndex + 1) % widget.round.playerIds.length];
-    final dealerId = await showDialog<String>(
+    final dealerSelection =
+        await showDialog<({String? dealerId, bool advance})>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
         var selectedDealerId = suggestedDealerId;
+        var advanceDealerOnScore = widget.round.dealerAdvancesOnScore;
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
             title: const Text('Wer ist dran?'),
@@ -1144,12 +1146,27 @@ class _SubroundTableState extends State<_SubroundTable> {
                     title: const Text('Niemand / egal'),
                     onTap: () => setDialogState(() => selectedDealerId = ''),
                   ),
+                  CheckboxListTile(
+                    value: advanceDealerOnScore,
+                    controlAffinity: ListTileControlAffinity.leading,
+                    title: const Text('Nach Punkteingabe weitergeben'),
+                    subtitle: const Text(
+                      'Dran wechselt, sobald der aktuelle\n'
+                      'Spieler Punkte erhält.',
+                    ),
+                    onChanged: (value) => setDialogState(
+                      () => advanceDealerOnScore = value ?? false,
+                    ),
+                  ),
                 ],
               ),
             ),
             actions: [
               FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, selectedDealerId),
+                onPressed: () => Navigator.pop(
+                  dialogContext,
+                  (dealerId: selectedDealerId, advance: advanceDealerOnScore),
+                ),
                 child: const Text('Übernehmen'),
               ),
             ],
@@ -1158,8 +1175,15 @@ class _SubroundTableState extends State<_SubroundTable> {
       },
     );
     selectingDealer = false;
-    if (dealerId == null || !mounted) return;
-    await widget.controller.updateGameRoundDealer(widget.round.id, dealerId);
+    if (dealerSelection == null || !mounted) return;
+    await widget.controller.updateGameRoundDealer(
+      widget.round.id,
+      dealerSelection.dealerId ?? '',
+    );
+    await widget.controller.updateGameRoundDealerAdvance(
+      widget.round.id,
+      dealerSelection.advance,
+    );
     if (mounted) setState(() {});
   }
 
@@ -1236,6 +1260,18 @@ class _SubroundTableState extends State<_SubroundTable> {
   String? _dealerForGame(GameRecord game, List<GameRecord> rounds) {
     final firstDealer = _firstDealer;
     if (firstDealer == null || widget.round.playerIds.isEmpty) return null;
+    if (widget.round.dealerAdvancesOnScore) {
+      final chronologicalRounds = [...rounds]
+        ..sort((first, second) => first.playedAt.compareTo(second.playedAt));
+      var dealerId = firstDealer;
+      for (final round in chronologicalRounds) {
+        if (round == game) break;
+        if (round.scores.containsKey(dealerId)) {
+          dealerId = _nextPlayerId(dealerId);
+        }
+      }
+      return dealerId;
+    }
     final chronologicalIndex = rounds.length - 1 - rounds.indexOf(game);
     final firstIndex = widget.round.playerIds.indexOf(firstDealer);
     if (firstIndex < 0) return null;
@@ -1246,10 +1282,28 @@ class _SubroundTableState extends State<_SubroundTable> {
   String? _dealerForDraft(List<GameRecord> rounds) {
     final firstDealer = _firstDealer;
     if (firstDealer == null || widget.round.playerIds.isEmpty) return null;
+    if (widget.round.dealerAdvancesOnScore) {
+      final chronologicalRounds = [...rounds]
+        ..sort((first, second) => first.playedAt.compareTo(second.playedAt));
+      var dealerId = firstDealer;
+      for (final round in chronologicalRounds) {
+        if (round.scores.containsKey(dealerId)) {
+          dealerId = _nextPlayerId(dealerId);
+        }
+      }
+      return dealerId;
+    }
     final firstIndex = widget.round.playerIds.indexOf(firstDealer);
     if (firstIndex < 0) return null;
     return widget.round.playerIds[
         (firstIndex + rounds.length) % widget.round.playerIds.length];
+  }
+
+  String _nextPlayerId(String playerId) {
+    final currentIndex = widget.round.playerIds.indexOf(playerId);
+    if (currentIndex < 0) return playerId;
+    return widget
+        .round.playerIds[(currentIndex + 1) % widget.round.playerIds.length];
   }
 
   Future<void> _newRound() async {

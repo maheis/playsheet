@@ -191,6 +191,7 @@ class AppController extends ChangeNotifier {
                   createdAt: round.createdAt,
                   maxPoints: round.maxPoints,
                   dealerPlayerId: round.dealerPlayerId,
+                  dealerAdvancesOnScore: round.dealerAdvancesOnScore,
                   completed: false,
                 )
               : round,
@@ -220,6 +221,30 @@ class AppController extends ChangeNotifier {
             createdAt: round.createdAt,
             maxPoints: round.maxPoints,
             dealerPlayerId: dealerPlayerId,
+            dealerAdvancesOnScore: round.dealerAdvancesOnScore,
+            completed: round.completed,
+            winnerPlayerIds: round.winnerPlayerIds,
+          )
+        else
+          round,
+    ];
+    await _repository.saveGameRounds(gameRounds);
+    notifyListeners();
+  }
+
+  Future<void> updateGameRoundDealerAdvance(String id, bool enabled) async {
+    gameRounds = [
+      for (final round in gameRounds)
+        if (round.id == id)
+          GameRound(
+            id: round.id,
+            sessionId: round.sessionId,
+            gameBlockId: round.gameBlockId,
+            playerIds: round.playerIds,
+            createdAt: round.createdAt,
+            maxPoints: round.maxPoints,
+            dealerPlayerId: round.dealerPlayerId,
+            dealerAdvancesOnScore: enabled,
             completed: round.completed,
             winnerPlayerIds: round.winnerPlayerIds,
           )
@@ -267,6 +292,7 @@ class AppController extends ChangeNotifier {
             createdAt: round.createdAt,
             maxPoints: maxPoints,
             dealerPlayerId: round.dealerPlayerId,
+            dealerAdvancesOnScore: round.dealerAdvancesOnScore,
             completed: round.completed,
             winnerPlayerIds: round.winnerPlayerIds,
           )
@@ -312,6 +338,7 @@ class AppController extends ChangeNotifier {
         createdAt: round.createdAt,
         maxPoints: round.maxPoints,
         dealerPlayerId: round.dealerPlayerId,
+        dealerAdvancesOnScore: round.dealerAdvancesOnScore,
         completed: true,
         winnerPlayerIds: winnerPlayerIds,
       );

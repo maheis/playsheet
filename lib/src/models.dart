@@ -66,6 +66,7 @@ class GameRound {
     required this.createdAt,
     this.maxPoints = 16,
     this.dealerPlayerId,
+    this.dealerAdvancesOnScore = false,
     this.completed = false,
     this.winnerPlayerIds = const [],
   });
@@ -77,6 +78,7 @@ class GameRound {
   final DateTime createdAt;
   final int maxPoints;
   final String? dealerPlayerId;
+  final bool dealerAdvancesOnScore;
   final bool completed;
   final List<String> winnerPlayerIds;
 }
