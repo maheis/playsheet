@@ -1112,7 +1112,7 @@ class _SubroundTableState extends State<_SubroundTable> {
         var selectedDealerId = suggestedDealerId;
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
-            title: const Text('Geber auswählen'),
+            title: const Text('Wer ist dran?'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -1132,7 +1132,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                       ),
                       title: Text(_playerName(playerId)),
                       subtitle: playerId == currentDealerId
-                          ? const Text('aktueller Geber')
+                          ? const Text('aktuell dran')
                           : playerId == suggestedDealerId
                               ? const Text('Vorschlag für diesen Durchgang')
                               : null,
@@ -1142,7 +1142,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                   ListTile(
                     selected: selectedDealerId == '',
                     leading: const Icon(Icons.remove_circle_outline_rounded),
-                    title: const Text('Kein Geber / egal'),
+                    title: const Text('Niemand / egal'),
                     onTap: () => setDialogState(() => selectedDealerId = ''),
                   ),
                 ],
@@ -2029,7 +2029,7 @@ class _SubroundTableState extends State<_SubroundTable> {
           const SizedBox(height: 2),
           if (isDealer)
             Text(
-              'Geber',
+              'Dran',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                     fontWeight: FontWeight.bold,
