@@ -2193,6 +2193,7 @@ class _SubroundTableState extends State<_SubroundTable> {
               _scoreField(
                 draftControllers,
                 id,
+                highlightColor: _playerPrimaryColor(id),
                 onChanged: (_) => setState(() {}),
                 onCommit: () => setState(
                   () => committedDraftPlayerIds.add(id),
@@ -2251,6 +2252,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                       roundControllers,
                       '${round.id}:$id',
                       value: round.scores[id],
+                      highlightColor: _playerPrimaryColor(id),
                       onChanged: (value) => _updateRoundScore(
                         round,
                         id,
@@ -2284,10 +2286,16 @@ class _SubroundTableState extends State<_SubroundTable> {
         ),
       );
 
+  Color? _playerPrimaryColor(String playerId) {
+    final value = widget.controller.playerById(playerId)?.primaryColorValue;
+    return value == null ? null : Color(value);
+  }
+
   Widget _scoreField(
     Map<String, TextEditingController> controllers,
     String key, {
     int? value,
+    Color? highlightColor,
     bool enabled = true,
     ValueChanged<String>? onChanged,
     VoidCallback? onCommit,
@@ -2302,6 +2310,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     return _CalculatorField(
       controller: controller,
       focusNode: focusNode,
+      highlightColor: highlightColor,
       onOpenChanged: (open) => calculatorOpeners[key] = open,
       allowNegative: widget.session.gameBlockId != 'ten_thousand',
       enabled: enabled,
@@ -3104,6 +3113,7 @@ class _CalculatorField extends StatefulWidget {
   const _CalculatorField({
     required this.controller,
     this.focusNode,
+    this.highlightColor,
     this.onOpenChanged,
     this.onChanged,
     this.onCommit,
@@ -3115,6 +3125,7 @@ class _CalculatorField extends StatefulWidget {
 
   final TextEditingController controller;
   final FocusNode? focusNode;
+  final Color? highlightColor;
   final ValueChanged<VoidCallback>? onOpenChanged;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onCommit;
@@ -3187,6 +3198,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
         child: _CalculatorPad(
           initialExpression: expression,
           allowNegative: widget.allowNegative,
+          highlightColor: widget.highlightColor,
           onExpressionChanged: (value) {
             expression = value;
             expressionChanged = true;
@@ -3238,7 +3250,8 @@ class _CalculatorFieldState extends State<_CalculatorField> {
           isDense: true,
           border: InputBorder.none,
           filled: calculatorOpen,
-          fillColor: Theme.of(context).colorScheme.secondaryContainer,
+          fillColor: widget.highlightColor?.withValues(alpha: .22) ??
+              Theme.of(context).colorScheme.secondaryContainer,
           contentPadding: const EdgeInsets.symmetric(vertical: 8),
         ),
       );
@@ -3249,6 +3262,7 @@ class _CalculatorPad extends StatefulWidget {
     required this.initialExpression,
     required this.allowNegative,
     required this.onExpressionChanged,
+    this.highlightColor,
     this.onComplete,
     this.onNextEmpty,
   });
@@ -3256,6 +3270,7 @@ class _CalculatorPad extends StatefulWidget {
   final String initialExpression;
   final bool allowNegative;
   final ValueChanged<String> onExpressionChanged;
+  final Color? highlightColor;
   final VoidCallback? onComplete;
   final VoidCallback? onNextEmpty;
 
@@ -3303,7 +3318,13 @@ class _CalculatorPadState extends State<_CalculatorPad> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final highlight = Theme.of(context).iconTheme.color ?? colors.secondary;
+    final highlight = widget.highlightColor ??
+        Theme.of(context).iconTheme.color ??
+        colors.secondary;
+    final highlightForeground =
+        ThemeData.estimateBrightnessForColor(highlight) == Brightness.dark
+            ? Colors.white
+            : Colors.black;
     final buttons = [
       ('AC', colors.secondaryContainer, colors.onSecondaryContainer),
       ('()', colors.secondaryContainer, colors.onSecondaryContainer),
@@ -3324,7 +3345,7 @@ class _CalculatorPadState extends State<_CalculatorPad> {
       ('⌫', colors.surfaceContainerHighest, colors.onSurface),
       ('0', colors.surfaceContainerHighest, colors.onSurface),
       ('+', colors.secondary, colors.onSecondary),
-      ('↵', highlight, Colors.black),
+      ('↵', highlight, highlightForeground),
     ];
     return SafeArea(
       top: false,
