@@ -1053,6 +1053,7 @@ class _SubroundTableState extends State<_SubroundTable> {
   final diceControllers = <String, TextEditingController>{};
   final committedDraftPlayerIds = <String>{};
   final virginPlayers = <String>{};
+  String? dealerAfterDraft;
   String? throughMarchPlayer;
   bool editingLatest = false;
   bool selectingDealer = false;
@@ -1278,13 +1279,9 @@ class _SubroundTableState extends State<_SubroundTable> {
         .toList()
       ..sort((first, second) => first.playedAt.compareTo(second.playedAt));
     for (final game in games) {
-      if (game.scores.containsKey(dealerId) && round.playerIds.isNotEmpty) {
-        final currentDealerId = dealerId;
-        final dealerIndex = round.playerIds.indexOf(currentDealerId);
-        if (dealerIndex >= 0) {
-          dealerId =
-              round.playerIds[(dealerIndex + 1) % round.playerIds.length];
-        }
+      for (var index = 0; index < round.playerIds.length; index++) {
+        if (!game.scores.containsKey(dealerId)) break;
+        dealerId = _nextPlayerId(dealerId);
       }
     }
     return dealerId;
@@ -1323,14 +1320,19 @@ class _SubroundTableState extends State<_SubroundTable> {
     if (_currentRound.dealerAdvancesOnScore) {
       final chronologicalRounds = [...rounds]
         ..sort((first, second) => first.playedAt.compareTo(second.playedAt));
-      var dealerId = firstDealer;
-      for (final round in chronologicalRounds) {
-        if (round.scores.containsKey(dealerId)) {
-          dealerId = _nextPlayerId(dealerId);
+      var dealerId = dealerAfterDraft ?? firstDealer;
+      if (dealerAfterDraft == null) {
+        for (final round in chronologicalRounds) {
+          for (var index = 0; index < widget.round.playerIds.length; index++) {
+            if (!round.scores.containsKey(dealerId)) break;
+            dealerId = _nextPlayerId(dealerId);
+          }
         }
       }
-      if (committedDraftPlayerIds.contains(dealerId)) {
-        dealerId = _nextPlayerId(dealerId);
+      for (final playerId in committedDraftPlayerIds) {
+        if (playerId == dealerId) {
+          dealerId = _nextPlayerId(dealerId);
+        }
       }
       return dealerId;
     }
@@ -2346,6 +2348,9 @@ class _SubroundTableState extends State<_SubroundTable> {
   }
 
   Future<void> _recordRound(int roundNumber) async {
+    final rounds = widget.controller.games
+        .where((game) => game.roundId == widget.round.id)
+        .toList();
     final scores = <String, int>{};
     for (final id in widget.round.playerIds) {
       final text = draftControllers[id]?.text.trim() ?? '';
@@ -2355,6 +2360,9 @@ class _SubroundTableState extends State<_SubroundTable> {
         return;
       }
       if (score != null) scores[id] = score;
+    }
+    if (_currentRound.dealerAdvancesOnScore) {
+      dealerAfterDraft = _dealerForDraft(rounds);
     }
     await widget.controller.addGame(
       GameRecord(
