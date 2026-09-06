@@ -1,7 +1,7 @@
 name: playsheet
 description: "Ein digitaler Spielblock und noch vieles mehr!"
 publish_to: "none"
-version: 0.0.18+18
+version: 0.0.19+19
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
