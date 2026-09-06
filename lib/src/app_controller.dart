@@ -28,6 +28,7 @@ class AppController extends ChangeNotifier {
                   playerIds: session.playerIds,
                   createdAt: session.createdAt,
                   maxPoints: session.maxPoints,
+                  dealerAdvancesOnScore: session.dealerAdvancesOnScore,
                 )
               : session,
         )
@@ -255,6 +256,27 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateGameSessionDealerAdvance(String id, bool enabled) async {
+    gameSessions = [
+      for (final session in gameSessions)
+        if (session.id == id)
+          GameSession(
+            id: session.id,
+            gameBlockId: session.gameBlockId,
+            name: session.name,
+            highWins: session.highWins,
+            playerIds: session.playerIds,
+            createdAt: session.createdAt,
+            maxPoints: session.maxPoints,
+            dealerAdvancesOnScore: enabled,
+          )
+        else
+          session,
+    ];
+    await _repository.saveGameSessions(gameSessions);
+    notifyListeners();
+  }
+
   Future<void> updateGameRoundPlayerOrder(
     String id,
     List<String> playerIds,
@@ -350,6 +372,7 @@ class AppController extends ChangeNotifier {
       playerIds: playerIds,
       createdAt: DateTime.now(),
       maxPoints: 16,
+      dealerAdvancesOnScore: session.dealerAdvancesOnScore,
     );
     gameRounds = [...completedRounds, round];
     await _repository.saveGameRounds(gameRounds);
@@ -376,6 +399,7 @@ class AppController extends ChangeNotifier {
       playerIds: playerIds,
       createdAt: DateTime.now(),
       maxPoints: maxPoints,
+      dealerAdvancesOnScore: false,
     );
     gameSessions = [...gameSessions, session];
     await _repository.saveGameSessions(gameSessions);
@@ -398,6 +422,7 @@ class AppController extends ChangeNotifier {
             playerIds: session.playerIds,
             createdAt: session.createdAt,
             maxPoints: session.maxPoints,
+            dealerAdvancesOnScore: session.dealerAdvancesOnScore,
           )
         : session;
     gameSessions = [

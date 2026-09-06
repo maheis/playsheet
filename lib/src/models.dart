@@ -65,8 +65,8 @@ class GameRound {
     required this.playerIds,
     required this.createdAt,
     this.maxPoints = 16,
-    this.dealerPlayerId,
     this.dealerAdvancesOnScore = false,
+    this.dealerPlayerId,
     this.completed = false,
     this.winnerPlayerIds = const [],
   });
@@ -92,6 +92,7 @@ class GameSession {
     required this.playerIds,
     required this.createdAt,
     this.maxPoints = 16,
+    this.dealerAdvancesOnScore = false,
   });
 
   final String id;
@@ -101,6 +102,7 @@ class GameSession {
   final List<String> playerIds;
   final DateTime createdAt;
   final int maxPoints;
+  final bool dealerAdvancesOnScore;
 }
 
 const gameBlocks = <GameBlockDefinition>[

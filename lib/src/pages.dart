@@ -1051,6 +1051,7 @@ class _SubroundTableState extends State<_SubroundTable> {
   final verticalScrollController = ScrollController();
   final horizontalScrollController = ScrollController();
   final diceControllers = <String, TextEditingController>{};
+  final committedDraftPlayerIds = <String>{};
   final virginPlayers = <String>{};
   String? throughMarchPlayer;
   bool editingLatest = false;
@@ -1109,8 +1110,12 @@ class _SubroundTableState extends State<_SubroundTable> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        var selectedDealerId = suggestedDealerId;
-        var advanceDealerOnScore = widget.round.dealerAdvancesOnScore;
+        var selectedDealerId = suggestedDealerId ??
+            (widget.round.playerIds.isEmpty
+                ? null
+                : widget.round.playerIds.first);
+        var advanceDealerOnScore = widget.session.dealerAdvancesOnScore ||
+            _currentRound.dealerAdvancesOnScore;
         return StatefulBuilder(
           builder: (context, setDialogState) => AlertDialog(
             title: const Text('Wer ist dran?'),
@@ -1182,6 +1187,10 @@ class _SubroundTableState extends State<_SubroundTable> {
     );
     await widget.controller.updateGameRoundDealerAdvance(
       widget.round.id,
+      dealerSelection.advance,
+    );
+    await widget.controller.updateGameSessionDealerAdvance(
+      widget.session.id,
       dealerSelection.advance,
     );
     if (mounted) setState(() {});
@@ -1257,10 +1266,15 @@ class _SubroundTableState extends State<_SubroundTable> {
       )
       .dealerPlayerId;
 
+  GameRound get _currentRound => widget.controller.gameRounds.firstWhere(
+        (round) => round.id == widget.round.id,
+        orElse: () => widget.round,
+      );
+
   String? _dealerForGame(GameRecord game, List<GameRecord> rounds) {
     final firstDealer = _firstDealer;
     if (firstDealer == null || widget.round.playerIds.isEmpty) return null;
-    if (widget.round.dealerAdvancesOnScore) {
+    if (_currentRound.dealerAdvancesOnScore) {
       final chronologicalRounds = [...rounds]
         ..sort((first, second) => first.playedAt.compareTo(second.playedAt));
       var dealerId = firstDealer;
@@ -1282,7 +1296,7 @@ class _SubroundTableState extends State<_SubroundTable> {
   String? _dealerForDraft(List<GameRecord> rounds) {
     final firstDealer = _firstDealer;
     if (firstDealer == null || widget.round.playerIds.isEmpty) return null;
-    if (widget.round.dealerAdvancesOnScore) {
+    if (_currentRound.dealerAdvancesOnScore) {
       final chronologicalRounds = [...rounds]
         ..sort((first, second) => first.playedAt.compareTo(second.playedAt));
       var dealerId = firstDealer;
@@ -1290,6 +1304,9 @@ class _SubroundTableState extends State<_SubroundTable> {
         if (round.scores.containsKey(dealerId)) {
           dealerId = _nextPlayerId(dealerId);
         }
+      }
+      if (committedDraftPlayerIds.contains(dealerId)) {
+        dealerId = _nextPlayerId(dealerId);
       }
       return dealerId;
     }
@@ -2151,6 +2168,9 @@ class _SubroundTableState extends State<_SubroundTable> {
                 draftControllers,
                 id,
                 onChanged: (_) => setState(() {}),
+                onCommit: () => setState(
+                  () => committedDraftPlayerIds.add(id),
+                ),
                 onComplete: () => _recordRound(roundNumber),
                 onNextEmpty: () => _focusNextField(id),
               ),
@@ -2244,6 +2264,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     int? value,
     bool enabled = true,
     ValueChanged<String>? onChanged,
+    VoidCallback? onCommit,
     VoidCallback? onComplete,
     VoidCallback? onNextEmpty,
   }) {
@@ -2259,6 +2280,7 @@ class _SubroundTableState extends State<_SubroundTable> {
       allowNegative: widget.session.gameBlockId != 'ten_thousand',
       enabled: enabled,
       onChanged: onChanged,
+      onCommit: onCommit,
       onComplete: onComplete,
       onNextEmpty: onNextEmpty,
     );
@@ -2307,6 +2329,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     for (final controller in draftControllers.values) {
       controller.clear();
     }
+    committedDraftPlayerIds.clear();
     if (mounted) setState(() {});
   }
 
@@ -3034,6 +3057,7 @@ class _CalculatorField extends StatefulWidget {
     this.focusNode,
     this.onOpenChanged,
     this.onChanged,
+    this.onCommit,
     this.onComplete,
     this.onNextEmpty,
     this.allowNegative = true,
@@ -3044,6 +3068,7 @@ class _CalculatorField extends StatefulWidget {
   final FocusNode? focusNode;
   final ValueChanged<VoidCallback>? onOpenChanged;
   final ValueChanged<String>? onChanged;
+  final VoidCallback? onCommit;
   final VoidCallback? onComplete;
   final VoidCallback? onNextEmpty;
   final bool allowNegative;
@@ -3071,6 +3096,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
   Future<void> _openCalculator() async {
     if (mounted) setState(() => calculatorOpen = true);
     var expression = widget.controller.text;
+    var expressionChanged = false;
     var completeAfterClose = false;
     var nextEmptyAfterClose = false;
     final mediaQuery = MediaQuery.of(context);
@@ -3114,6 +3140,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
           allowNegative: widget.allowNegative,
           onExpressionChanged: (value) {
             expression = value;
+            expressionChanged = true;
             final result = _calculateExpression(value);
             if (value.isEmpty) {
               widget.controller.clear();
@@ -3133,12 +3160,18 @@ class _CalculatorFieldState extends State<_CalculatorField> {
       ),
     );
     if (mounted) setState(() => calculatorOpen = false);
-    if (!mounted || result == null) return;
+    if (result == null) {
+      if (expressionChanged && _calculateExpression(expression) != null) {
+        widget.onCommit?.call();
+      }
+      return;
+    }
     widget.controller.value = TextEditingValue(
       text: result,
       selection: TextSelection.collapsed(offset: result.length),
     );
     widget.onChanged?.call(result);
+    if (expressionChanged) widget.onCommit?.call();
     if (completeAfterClose) widget.onComplete?.call();
     if (nextEmptyAfterClose) widget.onNextEmpty?.call();
   }
