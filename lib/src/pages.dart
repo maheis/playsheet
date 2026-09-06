@@ -1096,8 +1096,9 @@ class _SubroundTableState extends State<_SubroundTable> {
             round.dealerPlayerId != null)
         .toList()
       ..sort((first, second) => first.createdAt.compareTo(second.createdAt));
-    final currentDealerId =
-        previousRounds.isEmpty ? null : previousRounds.last.dealerPlayerId;
+    final currentDealerId = previousRounds.isEmpty
+        ? null
+        : _dealerAtEndOfRound(previousRounds.last);
     final currentDealerIndex = currentDealerId == null
         ? -1
         : widget.round.playerIds.indexOf(currentDealerId);
@@ -1265,6 +1266,29 @@ class _SubroundTableState extends State<_SubroundTable> {
         orElse: () => widget.round,
       )
       .dealerPlayerId;
+
+  String? _dealerAtEndOfRound(GameRound round) {
+    final initialDealerId = round.dealerPlayerId;
+    if (!round.dealerAdvancesOnScore || initialDealerId == null) {
+      return initialDealerId;
+    }
+    var dealerId = initialDealerId;
+    final games = widget.controller.games
+        .where((game) => game.roundId == round.id)
+        .toList()
+      ..sort((first, second) => first.playedAt.compareTo(second.playedAt));
+    for (final game in games) {
+      if (game.scores.containsKey(dealerId) && round.playerIds.isNotEmpty) {
+        final currentDealerId = dealerId;
+        final dealerIndex = round.playerIds.indexOf(currentDealerId);
+        if (dealerIndex >= 0) {
+          dealerId =
+              round.playerIds[(dealerIndex + 1) % round.playerIds.length];
+        }
+      }
+    }
+    return dealerId;
+  }
 
   GameRound get _currentRound => widget.controller.gameRounds.firstWhere(
         (round) => round.id == widget.round.id,
@@ -2172,7 +2196,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                   () => committedDraftPlayerIds.add(id),
                 ),
                 onComplete: () => _recordRound(roundNumber),
-                onNextEmpty: () => _focusNextField(id),
+                onNextEmpty: () => _advanceAfterEnter(id, roundNumber),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 8),
             ),
@@ -2294,6 +2318,23 @@ class _SubroundTableState extends State<_SubroundTable> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) calculatorOpeners[nextId]?.call();
     });
+  }
+
+  Future<void> _advanceAfterEnter(String currentId, int roundNumber) async {
+    final currentIndex = widget.round.playerIds.indexOf(currentId);
+    if (currentIndex == widget.round.playerIds.length - 1) {
+      await _recordRound(roundNumber);
+      if (!mounted || widget.round.playerIds.isEmpty) return;
+      final firstPlayerId = widget.round.playerIds.first;
+      FocusScope.of(context).requestFocus(
+        calculatorFocusNodes[firstPlayerId],
+      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) calculatorOpeners[firstPlayerId]?.call();
+      });
+      return;
+    }
+    _focusNextField(currentId);
   }
 
   String _roundNumber(GameRecord round) {
