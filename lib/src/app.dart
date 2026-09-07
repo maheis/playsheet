@@ -52,12 +52,27 @@ class PlaySheetApp extends StatelessWidget {
       tertiary: const Color(0xFF8FDCBE),
       surfaceTint: const Color(0xFF9575CD),
     );
+    final snackBarBackground = Color.alphaBlend(
+      scheme.primary
+          .withValues(alpha: brightness == Brightness.dark ? .18 : .1),
+      scheme.surface,
+    );
+    final snackBarForeground =
+        ThemeData.estimateBrightnessForColor(snackBarBackground) ==
+                Brightness.dark
+            ? Colors.white
+            : Colors.black;
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
       fontFamily: settings.fontFamily,
       scaffoldBackgroundColor: scheme.surface,
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: snackBarBackground,
+        contentTextStyle: TextStyle(color: snackBarForeground),
+        actionTextColor: scheme.primary,
+      ),
       iconTheme: IconThemeData(color: highlight),
       appBarTheme: AppBarTheme(
         iconTheme: IconThemeData(color: highlight),

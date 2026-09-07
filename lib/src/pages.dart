@@ -2170,17 +2170,6 @@ class _SubroundTableState extends State<_SubroundTable> {
     String playerId,
     String value,
   ) {
-    final score = int.tryParse(value.trim());
-    if (score == null) return;
-    final maximum = _diceCategoryMaximum(category);
-    if (!_isValidDiceScore(category, score)) {
-      diceControllers['$category:$playerId']?.clear();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Für $category sind maximal $maximum Punkte möglich.'),
-        ),
-      );
-    }
     setState(() {});
   }
 
