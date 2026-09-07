@@ -194,6 +194,25 @@ const diceBlockCategoryIcons = <String, IconData>{
   'Chance': Icons.shuffle_rounded,
 };
 
+const kingdominoCategories = <String>[
+  'kingdomino_yellow',
+  'kingdomino_dark_green',
+  'kingdomino_blue',
+  'kingdomino_light_green',
+  'kingdomino_light_brown',
+  'kingdomino_black',
+  'kingdomino_special',
+];
+
+const kingdominoCategoryColors = <String, Color>{
+  'kingdomino_yellow': Color(0xFFFFF176),
+  'kingdomino_dark_green': Color(0xFF2D4015),
+  'kingdomino_blue': Color(0xFF64B5F6),
+  'kingdomino_light_green': Color(0xFFAED581),
+  'kingdomino_light_brown': Color(0xFF905128),
+  'kingdomino_black': Color(0xFF1E1E1E),
+};
+
 GameBlockDefinition gameBlockFor(String id) => gameBlocks.firstWhere(
       (block) => block.id == id,
       orElse: () => gameBlocks.first,

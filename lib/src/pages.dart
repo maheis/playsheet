@@ -61,89 +61,26 @@ class HomePage extends StatelessWidget {
             children: [
               LayoutBuilder(
                 builder: (context, _) => _TileGrid(
-                  children: [
-                    _ActionTile(
-                      icon: Icons.looks_3_rounded,
-                      iconLabel: gameBlockFor('one_plus_two').iconLabel,
-                      title: '1 + 2 = 3',
-                      detail:
-                          '${_gameCount(controller, 'one_plus_two')} Spiele',
-                      onTap: () => pushPage(
-                        context,
-                        GameSessionsPage(
-                          controller: controller,
-                          block: gameBlockFor('one_plus_two'),
+                  children: (gameBlocks.toList()
+                        ..sort((first, second) => first.name
+                            .toLowerCase()
+                            .compareTo(second.name.toLowerCase())))
+                      .map(
+                        (block) => _ActionTile(
+                          icon: block.icon,
+                          iconLabel: block.iconLabel,
+                          title: block.name,
+                          detail: '${_gameCount(controller, block.id)} Spiele',
+                          onTap: () => pushPage(
+                            context,
+                            GameSessionsPage(
+                              controller: controller,
+                              block: block,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    _ActionTile(
-                      icon: Icons.exposure_plus_1_rounded,
-                      iconLabel: gameBlockFor('three_plus_minus_two').iconLabel,
-                      title: '3 +- 2 = 1',
-                      detail:
-                          '${_gameCount(controller, 'three_plus_minus_two')} '
-                          'Spiele',
-                      onTap: () => pushPage(
-                        context,
-                        GameSessionsPage(
-                          controller: controller,
-                          block: gameBlockFor('three_plus_minus_two'),
-                        ),
-                      ),
-                    ),
-                    _ActionTile(
-                      icon: gameBlockFor('ten_thousand').icon,
-                      iconLabel: gameBlockFor('ten_thousand').iconLabel,
-                      title: '10Tausend',
-                      detail:
-                          '${_gameCount(controller, 'ten_thousand')} Spiele',
-                      onTap: () => pushPage(
-                        context,
-                        GameSessionsPage(
-                          controller: controller,
-                          block: gameBlockFor('ten_thousand'),
-                        ),
-                      ),
-                    ),
-                    _ActionTile(
-                      icon: gameBlockFor('damjagen').icon,
-                      iconLabel: gameBlockFor('damjagen').iconLabel,
-                      title: "Dam'jagen",
-                      detail: '${_gameCount(controller, 'damjagen')} Spiele',
-                      onTap: () => pushPage(
-                        context,
-                        GameSessionsPage(
-                          controller: controller,
-                          block: gameBlockFor('damjagen'),
-                        ),
-                      ),
-                    ),
-                    _ActionTile(
-                      icon: gameBlockFor('tally').icon,
-                      iconLabel: gameBlockFor('tally').iconLabel,
-                      title: 'Strichliste',
-                      detail: '${_gameCount(controller, 'tally')} Spiele',
-                      onTap: () => pushPage(
-                        context,
-                        GameSessionsPage(
-                          controller: controller,
-                          block: gameBlockFor('tally'),
-                        ),
-                      ),
-                    ),
-                    _ActionTile(
-                      icon: gameBlockFor('dice_block').icon,
-                      title: 'Würfelblock',
-                      detail: '${_gameCount(controller, 'dice_block')} Spiele',
-                      onTap: () => pushPage(
-                        context,
-                        GameSessionsPage(
-                          controller: controller,
-                          block: gameBlockFor('dice_block'),
-                        ),
-                      ),
-                    ),
-                  ],
+                      )
+                      .toList(),
                 ),
               ),
             ],
@@ -587,7 +524,8 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
               ],
               if (widget.block.id != 'ten_thousand' &&
                   widget.block.id != 'damjagen' &&
-                  widget.block.id != 'dice_block') ...[
+                  widget.block.id != 'dice_block' &&
+                  widget.block.id != 'kingdomino') ...[
                 const SizedBox(height: 20),
                 Text('Gewinnart',
                     style: Theme.of(context).textTheme.titleMedium),
@@ -764,12 +702,13 @@ class _GameSessionConfigPageState extends State<GameSessionConfigPage> {
       id: session?.id ?? DateTime.now().microsecondsSinceEpoch.toString(),
       gameBlockId: widget.block.id,
       name: gameName,
-      highWins:
-          widget.block.id == 'ten_thousand' || widget.block.id == 'dice_block'
-              ? true
-              : widget.block.id == 'damjagen'
-                  ? false
-                  : highWins,
+      highWins: widget.block.id == 'ten_thousand' ||
+              widget.block.id == 'dice_block' ||
+              widget.block.id == 'kingdomino'
+          ? true
+          : widget.block.id == 'damjagen'
+              ? false
+              : highWins,
       playerIds: selectedPlayerIds.toList(),
       createdAt: session?.createdAt ?? DateTime.now(),
       maxPoints: int.tryParse(maxPoints.text.trim()) ?? 16,
@@ -1051,6 +990,7 @@ class _SubroundTableState extends State<_SubroundTable> {
   final verticalScrollController = ScrollController();
   final horizontalScrollController = ScrollController();
   final diceControllers = <String, TextEditingController>{};
+  final kingdominoControllers = <String, TextEditingController>{};
   final committedDraftPlayerIds = <String>{};
   final virginPlayers = <String>{};
   String? dealerAfterDraft;
@@ -1069,6 +1009,9 @@ class _SubroundTableState extends State<_SubroundTable> {
     for (final controller in diceControllers.values) {
       controller.dispose();
     }
+    for (final controller in kingdominoControllers.values) {
+      controller.dispose();
+    }
     for (final focusNode in calculatorFocusNodes.values) {
       focusNode.dispose();
     }
@@ -1082,7 +1025,8 @@ class _SubroundTableState extends State<_SubroundTable> {
     super.initState();
     if (!widget.round.completed &&
         widget.round.dealerPlayerId == null &&
-        widget.round.gameBlockId != 'dice_block') {
+        widget.round.gameBlockId != 'dice_block' &&
+        widget.round.gameBlockId != 'kingdomino') {
       WidgetsBinding.instance.addPostFrameCallback((_) => _selectDealer());
     }
   }
@@ -1419,6 +1363,9 @@ class _SubroundTableState extends State<_SubroundTable> {
     }
     if (widget.round.gameBlockId == 'dice_block') {
       return _buildDiceBlockPage(context);
+    }
+    if (widget.round.gameBlockId == 'kingdomino') {
+      return _buildKingdominoPage(context);
     }
     return _GesturePage(
       onPinch: () => _showResultsZoom(totals),
@@ -1904,6 +1851,217 @@ class _SubroundTableState extends State<_SubroundTable> {
         ),
       ),
     );
+  }
+
+  Widget _buildKingdominoPage(BuildContext context) {
+    final categoryGames = widget.controller.games
+        .where(
+          (game) => game.roundId == widget.round.id && game.categoryId != null,
+        )
+        .toList();
+    final scores = <String, Map<String, int>>{
+      for (final category in kingdominoCategories)
+        category: {
+          for (final game in categoryGames)
+            if (game.categoryId == category) ...game.scores,
+        },
+    };
+    final totals = {
+      for (final playerId in widget.round.playerIds)
+        playerId: kingdominoCategories.fold<int>(
+          0,
+          (sum, category) =>
+              sum +
+              (scores[category]?[playerId] ??
+                  int.tryParse(
+                    kingdominoControllers['$category:$playerId']?.text.trim() ??
+                        '',
+                  ) ??
+                  0),
+        ),
+    };
+    return _GesturePage(
+      onPinch: () => _showResultsZoom(totals),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.session.name),
+          actions: [
+            if (!widget.round.completed)
+              IconButton(
+                tooltip: 'Neue Runde',
+                icon: const Icon(Icons.add_circle_outline_rounded),
+                onPressed: _newRound,
+              ),
+            IconButton(
+              tooltip: 'Spielerreihenfolge ändern',
+              icon: const Icon(Icons.swap_vert_rounded),
+              onPressed: _reorderPlayers,
+            ),
+          ],
+        ),
+        body: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.all(12),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints:
+                    BoxConstraints(minWidth: constraints.maxWidth - 24),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Table(
+                    border: TableBorder.all(
+                      color: Theme.of(context).dividerColor,
+                      width: .6,
+                    ),
+                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                    defaultColumnWidth: const IntrinsicColumnWidth(),
+                    children: [
+                      TableRow(
+                        children: [
+                          _tableCell(context, const SizedBox.shrink()),
+                          ...widget.round.playerIds.map(
+                            (id) => _tableCell(
+                                context, _playerHeader(context, id, null)),
+                          ),
+                        ],
+                      ),
+                      for (final category in kingdominoCategories)
+                        TableRow(
+                          children: [
+                            _tableCell(
+                              context,
+                              category == 'kingdomino_special'
+                                  ? const Text('Sonderpunkte')
+                                  : _kingdominoColorBox(category),
+                            ),
+                            ...widget.round.playerIds.map((playerId) {
+                              final value = scores[category]?[playerId];
+                              return _tableCell(
+                                context,
+                                GestureDetector(
+                                  onTap: value == null
+                                      ? null
+                                      : () => _removeKingdominoScore(
+                                            category,
+                                            playerId,
+                                          ),
+                                  child: value == null
+                                      ? widget.round.completed
+                                          ? const SizedBox.shrink()
+                                          : _scoreField(
+                                              kingdominoControllers,
+                                              '$category:$playerId',
+                                              onChanged: (_) => setState(() {}),
+                                              onComplete: () =>
+                                                  _recordKingdominoScore(
+                                                category,
+                                                playerId,
+                                              ),
+                                            )
+                                      : Text(
+                                          '$value',
+                                          textAlign: TextAlign.center,
+                                        ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      TableRow(
+                        decoration: BoxDecoration(
+                          color:
+                              Theme.of(context).colorScheme.secondaryContainer,
+                          border: Border(
+                            top: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 2,
+                            ),
+                            bottom: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 3,
+                            ),
+                          ),
+                        ),
+                        children: [
+                          _tableCell(context, const Text('Summe'), bold: true),
+                          ...widget.round.playerIds.map(
+                            (playerId) => _tableCell(
+                              context,
+                              Text(
+                                '${totals[playerId] ?? 0}',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _kingdominoColorBox(String category) => Container(
+        width: 28,
+        height: 28,
+        decoration: BoxDecoration(
+          color: kingdominoCategoryColors[category],
+          border: Border.all(color: Colors.black26),
+        ),
+      );
+
+  GameRecord? _kingdominoGameFor(String category, String playerId) {
+    for (final game in widget.controller.games) {
+      if (game.roundId == widget.round.id &&
+          game.categoryId == category &&
+          game.scores.containsKey(playerId)) {
+        return game;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _recordKingdominoScore(
+    String category,
+    String playerId,
+  ) async {
+    final controller = kingdominoControllers['$category:$playerId'];
+    final value = int.tryParse(controller?.text.trim() ?? '');
+    if (value == null || value < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Bitte eine Punktzahl ab 0 eingeben.')),
+      );
+      return;
+    }
+    await widget.controller.addGame(
+      GameRecord(
+        id: DateTime.now().microsecondsSinceEpoch.toString(),
+        roundId: widget.round.id,
+        sessionId: widget.session.id,
+        gameBlockId: widget.round.gameBlockId,
+        playerIds: widget.round.playerIds,
+        scores: {playerId: value},
+        playedAt: DateTime.now(),
+        categoryId: category,
+      ),
+    );
+    controller?.clear();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _removeKingdominoScore(String category, String playerId) async {
+    final game = _kingdominoGameFor(category, playerId);
+    if (game == null) return;
+    await widget.controller.deleteGame(game.id);
+    if (mounted) setState(() {});
   }
 
   Future<void> _recordDiceScore(String category, String playerId) async {
@@ -2462,7 +2620,8 @@ class _SubroundTableState extends State<_SubroundTable> {
       highlightColor: highlightColor,
       emptyAsZero: emptyAsZero,
       onOpenChanged: (open) => calculatorOpeners[key] = open,
-      allowNegative: widget.session.gameBlockId != 'ten_thousand',
+      allowNegative: widget.session.gameBlockId != 'ten_thousand' &&
+          widget.session.gameBlockId != 'kingdomino',
       enabled: enabled,
       onChanged: onChanged,
       onCommit: onCommit,
@@ -2569,7 +2728,8 @@ class _SubroundTableState extends State<_SubroundTable> {
 
   bool get _allowsNegativeScores =>
       widget.session.gameBlockId != 'one_plus_two' &&
-      widget.session.gameBlockId != 'ten_thousand';
+      widget.session.gameBlockId != 'ten_thousand' &&
+      widget.session.gameBlockId != 'kingdomino';
 
   bool _isValidScore(int score) {
     if (!_allowsNegativeScores && score < 0) return false;

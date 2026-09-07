@@ -15,7 +15,7 @@ Ein digitaler und papierloser Spielblock, der die Verwaltung von Spielständen u
 - [x] Dam'jagen
 - [x] Würfelblock
 - [ ] Cluedo
-- [ ] Kingdomino
+- [x] Kingdomino
 - [ ] Skat
 - [ ] Schafkopf
 - [ ] Doppelkopf
