@@ -1784,7 +1784,17 @@ class _SubroundTableState extends State<_SubroundTable> {
                                                   playerId,
                                                   value,
                                                 ),
+                                                onDismiss: () =>
+                                                    _recordDiceScore(
+                                                  category,
+                                                  playerId,
+                                                ),
                                                 onComplete: () =>
+                                                    _recordDiceScore(
+                                                  category,
+                                                  playerId,
+                                                ),
+                                                onNextEmpty: () =>
                                                     _recordDiceScore(
                                                   category,
                                                   playerId,
@@ -2604,6 +2614,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     bool emptyAsZero = false,
     bool enabled = true,
     ValueChanged<String>? onChanged,
+    VoidCallback? onDismiss,
     VoidCallback? onCommit,
     VoidCallback? onComplete,
     VoidCallback? onNextEmpty,
@@ -2623,6 +2634,7 @@ class _SubroundTableState extends State<_SubroundTable> {
           widget.session.gameBlockId != 'kingdomino',
       enabled: enabled,
       onChanged: onChanged,
+      onDismiss: onDismiss,
       onCommit: onCommit,
       onComplete: onComplete,
       onNextEmpty: onNextEmpty,
@@ -3421,6 +3433,7 @@ class _CalculatorField extends StatefulWidget {
     this.emptyAsZero = false,
     this.onOpenChanged,
     this.onChanged,
+    this.onDismiss,
     this.onCommit,
     this.onComplete,
     this.onNextEmpty,
@@ -3434,6 +3447,7 @@ class _CalculatorField extends StatefulWidget {
   final bool emptyAsZero;
   final ValueChanged<VoidCallback>? onOpenChanged;
   final ValueChanged<String>? onChanged;
+  final VoidCallback? onDismiss;
   final VoidCallback? onCommit;
   final VoidCallback? onComplete;
   final VoidCallback? onNextEmpty;
@@ -3530,7 +3544,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
     if (mounted) setState(() => calculatorOpen = false);
     if (result == null) {
       if (expressionChanged && _calculateExpression(expression) != null) {
-        widget.onCommit?.call();
+        (widget.onDismiss ?? widget.onCommit)?.call();
       }
       return;
     }
