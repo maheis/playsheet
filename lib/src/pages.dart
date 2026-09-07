@@ -2376,7 +2376,6 @@ class _SubroundTableState extends State<_SubroundTable> {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (pageContext) => _GesturePage(
-          onPinch: () => Navigator.of(pageContext).pop(),
           child: Scaffold(
             appBar: AppBar(title: const Text('Ergebnisse')),
             body: SingleChildScrollView(
@@ -3803,10 +3802,10 @@ class _CalculatorButton extends StatelessWidget {
 }
 
 class _GesturePage extends StatefulWidget {
-  const _GesturePage({required this.child, required this.onPinch});
+  const _GesturePage({required this.child, this.onPinch});
 
   final Widget child;
-  final VoidCallback onPinch;
+  final VoidCallback? onPinch;
 
   @override
   State<_GesturePage> createState() => _GesturePageState();
@@ -3823,9 +3822,11 @@ class _GesturePageState extends State<_GesturePage> {
   }
 
   void _handleScaleUpdate(ScaleUpdateDetails details) {
-    if (!pinchHandled && (details.scale - 1).abs() > .18) {
+    if (widget.onPinch != null &&
+        !pinchHandled &&
+        (details.scale - 1).abs() > .18) {
       pinchHandled = true;
-      widget.onPinch();
+      widget.onPinch!();
       return;
     }
     if (!rotationHandled && details.rotation.abs() > math.pi * .7) {

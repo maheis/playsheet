@@ -1,7 +1,6 @@
 # ToDo
 
 - [x] Highlight-Fabe wie in VolleyAce verwenden! Aktuell ist Aktzent für Steuerelemente genutzt!
-- [ ] Settings-Page angleichen mit VolleyAce (Vorschau und Speicherbutton in VolleyAce entfernen!)
 - [x] Eingabe direkt live auf das Ergebnis (Summezeile) rechnen
 - [x] Geber markieren (neue Runde neuen Geber abfragen)
 - [x] Spielerstatistik (Runden werden aktuell als Spiele gezählt)
@@ -17,7 +16,6 @@
 - [x] Neuer Durchgang Button oben rechts soll auch + Zeichen in einem Kreis sein.
 - [x] Neuer Durchgang soll nächsten Geber vorschlagen, dabei soll der aktuelle Geber markiert werden im Dialog.
 - [x] Namen für Spiele sollen als Physische Spiele "gespeichert" werden und wenn ein neues Spiel erstellt wird, sollen Vorschläge basierend auf den gespeicherten Spielen gemacht werden. (Filter wie bei der Spielerauswahl)
-- [ ] Statistik nach Spiel filtern
 - [x] In der Tabelle das Textfeld gehighlightet lassen in dem man aktuell schreibt (wenn Taschenrechner offen ist)
 - [x] Reihenfolge von Spielern in der Tabelle nachträglich ändern können
 - [x] 10Tausend gewinnt hoch und nicht tief!
@@ -25,8 +23,10 @@
 - [x] Zoom-Knopf (neben dem Summenzeichen) für das Ergebnis, dabei soll in der ersten Spalte die Spieler stehen und Rechts in einer Spalte die entsprechenden Ergebnisse angezeigt werden. Schriftgröße dreimal so groß und Sortierung nach den Ergebnissen (Absteigend bei Hoch gewinnt und Aufsteigend bei Tief gewinnt)
 - [x] Enter nicht die Runde abschließen
 - [x] Zehnzausend 0 erlauben
-- [ ] Geber weiterschieben, wenn nichts drin steht
 - [x] + soll ins erste Feld wechseln
 - [x] Zoom-Seite drehen können
 - [x] Pinch to Zoom
 - [x] Zoom-Button links vom Summenzeichen
+- [ ] Settings-Page angleichen mit VolleyAce (Vorschau und Speicherbutton in VolleyAce entfernen!)
+- [ ] Statistik nach Spiel filtern
+- [ ] Geber weiterschieben, wenn nichts drin steht
