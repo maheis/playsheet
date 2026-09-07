@@ -27,3 +27,6 @@
 - [x] Zehnzausend 0 erlauben
 - [ ] Geber weiterschieben, wenn nichts drin steht
 - [x] + soll ins erste Feld wechseln
+- [x] Zoom-Seite drehen können
+- [x] Pinch to Zoom
+- [x] Zoom-Button links vom Summenzeichen

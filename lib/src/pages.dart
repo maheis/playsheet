@@ -1420,76 +1420,79 @@ class _SubroundTableState extends State<_SubroundTable> {
     if (widget.round.gameBlockId == 'dice_block') {
       return _buildDiceBlockPage(context);
     }
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.session.name),
-        actions: [
-          if (!widget.round.completed)
+    return _GesturePage(
+      onPinch: () => _showResultsZoom(totals),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.session.name),
+          actions: [
+            if (!widget.round.completed)
+              IconButton(
+                tooltip: 'Neue Runde',
+                icon: const Icon(Icons.add_circle_outline_rounded),
+                onPressed: _newRound,
+              ),
             IconButton(
-              tooltip: 'Neue Runde',
-              icon: const Icon(Icons.add_circle_outline_rounded),
-              onPressed: _newRound,
+              tooltip: 'Spielerreihenfolge ändern',
+              icon: const Icon(Icons.swap_vert_rounded),
+              onPressed: _reorderPlayers,
             ),
-          IconButton(
-            tooltip: 'Spielerreihenfolge ändern',
-            icon: const Icon(Icons.swap_vert_rounded),
-            onPressed: _reorderPlayers,
-          ),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) => Column(
-          children: [
-            Expanded(
-              child: Scrollbar(
-                controller: verticalScrollController,
-                child: SingleChildScrollView(
+          ],
+        ),
+        body: LayoutBuilder(
+          builder: (context, constraints) => Column(
+            children: [
+              Expanded(
+                child: Scrollbar(
                   controller: verticalScrollController,
-                  padding: const EdgeInsets.all(12),
-                  child: Scrollbar(
-                    controller: horizontalScrollController,
-                    notificationPredicate: (notification) =>
-                        notification.depth == 1,
-                    child: SingleChildScrollView(
+                  child: SingleChildScrollView(
+                    controller: verticalScrollController,
+                    padding: const EdgeInsets.all(12),
+                    child: Scrollbar(
                       controller: horizontalScrollController,
-                      scrollDirection: Axis.horizontal,
-                      child: ConstrainedBox(
-                        constraints:
-                            BoxConstraints(minWidth: constraints.maxWidth),
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: Table(
-                            border: TableBorder(
-                              horizontalInside: BorderSide(
-                                color: Theme.of(context).dividerColor,
-                                width: .6,
-                              ),
-                              verticalInside: BorderSide(
-                                color: Theme.of(context).dividerColor,
-                                width: .6,
-                              ),
-                            ),
-                            defaultVerticalAlignment:
-                                TableCellVerticalAlignment.middle,
-                            defaultColumnWidth: const IntrinsicColumnWidth(),
-                            columnWidths: const {0: IntrinsicColumnWidth()},
-                            children: [
-                              _headerRow(context, rounds),
-                              _totalsRow(context, totals, winningValue),
-                              if (!widget.round.completed)
-                                widget.round.gameBlockId == 'damjagen'
-                                    ? _damjagenDraftRow(
-                                        context, rounds.length + 1)
-                                    : _draftRow(context, rounds.length + 1),
-                              ...rounds.map(
-                                (round) => _roundRow(
-                                  context,
-                                  round,
-                                  !widget.round.completed &&
-                                      rounds.first.id == round.id,
+                      notificationPredicate: (notification) =>
+                          notification.depth == 1,
+                      child: SingleChildScrollView(
+                        controller: horizontalScrollController,
+                        scrollDirection: Axis.horizontal,
+                        child: ConstrainedBox(
+                          constraints:
+                              BoxConstraints(minWidth: constraints.maxWidth),
+                          child: Align(
+                            alignment: Alignment.topCenter,
+                            child: Table(
+                              border: TableBorder(
+                                horizontalInside: BorderSide(
+                                  color: Theme.of(context).dividerColor,
+                                  width: .6,
+                                ),
+                                verticalInside: BorderSide(
+                                  color: Theme.of(context).dividerColor,
+                                  width: .6,
                                 ),
                               ),
-                            ],
+                              defaultVerticalAlignment:
+                                  TableCellVerticalAlignment.middle,
+                              defaultColumnWidth: const IntrinsicColumnWidth(),
+                              columnWidths: const {0: IntrinsicColumnWidth()},
+                              children: [
+                                _headerRow(context, rounds),
+                                _totalsRow(context, totals, winningValue),
+                                if (!widget.round.completed)
+                                  widget.round.gameBlockId == 'damjagen'
+                                      ? _damjagenDraftRow(
+                                          context, rounds.length + 1)
+                                      : _draftRow(context, rounds.length + 1),
+                                ...rounds.map(
+                                  (round) => _roundRow(
+                                    context,
+                                    round,
+                                    !widget.round.completed &&
+                                        rounds.first.id == round.id,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -1497,8 +1500,8 @@ class _SubroundTableState extends State<_SubroundTable> {
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1514,124 +1517,129 @@ class _SubroundTableState extends State<_SubroundTable> {
         playerId: tallyGames.fold<int>(
             0, (sum, game) => sum + (game.scores[playerId] ?? 0)),
     };
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.session.name),
-        actions: [
-          if (!widget.round.completed)
+    return _GesturePage(
+      onPinch: () => _showResultsZoom(counts),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.session.name),
+          actions: [
+            if (!widget.round.completed)
+              IconButton(
+                tooltip: 'Neue Runde',
+                icon: const Icon(Icons.add_circle_outline_rounded),
+                onPressed: _newRound,
+              ),
             IconButton(
-              tooltip: 'Neue Runde',
-              icon: const Icon(Icons.add_circle_outline_rounded),
-              onPressed: _newRound,
+              tooltip: 'Spielerreihenfolge ändern',
+              icon: const Icon(Icons.swap_vert_rounded),
+              onPressed: _reorderPlayers,
             ),
-          IconButton(
-            tooltip: 'Spielerreihenfolge ändern',
-            icon: const Icon(Icons.swap_vert_rounded),
-            onPressed: _reorderPlayers,
-          ),
-        ],
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          padding: const EdgeInsets.all(12),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: constraints.maxWidth - 24),
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: Table(
-                  border: TableBorder(
-                    horizontalInside: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: .6,
+          ],
+        ),
+        body: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.all(12),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints:
+                    BoxConstraints(minWidth: constraints.maxWidth - 24),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: Table(
+                    border: TableBorder(
+                      horizontalInside: BorderSide(
+                        color: Theme.of(context).dividerColor,
+                        width: .6,
+                      ),
+                      verticalInside: BorderSide(
+                        color: Theme.of(context).dividerColor,
+                        width: .6,
+                      ),
                     ),
-                    verticalInside: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                      width: .6,
-                    ),
-                  ),
-                  defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                  defaultColumnWidth: const IntrinsicColumnWidth(),
-                  children: [
-                    TableRow(
-                      children: [
-                        _tableCell(context, const SizedBox.shrink()),
-                        ...widget.round.playerIds.map(
-                          (id) => _tableCell(
-                            context,
-                            _playerHeader(
+                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                    defaultColumnWidth: const IntrinsicColumnWidth(),
+                    children: [
+                      TableRow(
+                        children: [
+                          _tableCell(context, const SizedBox.shrink()),
+                          ...widget.round.playerIds.map(
+                            (id) => _tableCell(
                               context,
-                              id,
-                              widget.round.completed
-                                  ? tallyGames.isEmpty
-                                      ? null
-                                      : _dealerForGame(
-                                          tallyGames.first,
-                                          tallyGames,
-                                        )
-                                  : _dealerForDraft(tallyGames),
+                              _playerHeader(
+                                context,
+                                id,
+                                widget.round.completed
+                                    ? tallyGames.isEmpty
+                                        ? null
+                                        : _dealerForGame(
+                                            tallyGames.first,
+                                            tallyGames,
+                                          )
+                                    : _dealerForDraft(tallyGames),
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    TableRow(
-                      children: [
-                        _tableCell(
-                          context,
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text('Σ'),
+                        ],
+                      ),
+                      TableRow(
+                        children: [
+                          _tableCell(
+                            context,
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  tooltip: 'Ergebnisse vergrößern',
+                                  icon: const Icon(Icons.zoom_in_rounded),
+                                  onPressed: () => _showResultsZoom(counts),
+                                  padding: EdgeInsets.zero,
+                                ),
+                                const SizedBox(width: 6),
+                                const Text('Σ'),
+                              ],
+                            ),
+                            bold: true,
+                          ),
+                          ...widget.round.playerIds.map(
+                            (id) => _tableCell(
+                              context,
+                              Text(
+                                '${counts[id] ?? 0}',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      TableRow(
+                        children: [
+                          _tableCell(context, const SizedBox.shrink()),
+                          ...widget.round.playerIds.map(
+                            (id) => _tableCell(
+                              context,
                               IconButton(
-                                tooltip: 'Ergebnisse vergrößern',
-                                icon: const Icon(Icons.zoom_in_rounded),
-                                onPressed: () => _showResultsZoom(counts),
-                                padding: EdgeInsets.zero,
+                                tooltip: 'Strich hinzufügen',
+                                icon: const Icon(
+                                  Icons.add_rounded,
+                                  color: Colors.orange,
+                                ),
+                                onPressed: widget.round.completed
+                                    ? null
+                                    : () => _addTallyMark(id),
+                                onLongPress: widget.round.completed
+                                    ? null
+                                    : () => _removeTallyMark(id),
                               ),
-                            ],
-                          ),
-                          bold: true,
-                        ),
-                        ...widget.round.playerIds.map(
-                          (id) => _tableCell(
-                            context,
-                            Text(
-                              '${counts[id] ?? 0}',
-                              textAlign: TextAlign.center,
-                              style:
-                                  const TextStyle(fontWeight: FontWeight.bold),
+                              padding: EdgeInsets.zero,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    TableRow(
-                      children: [
-                        _tableCell(context, const SizedBox.shrink()),
-                        ...widget.round.playerIds.map(
-                          (id) => _tableCell(
-                            context,
-                            IconButton(
-                              tooltip: 'Strich hinzufügen',
-                              icon: const Icon(
-                                Icons.add_rounded,
-                                color: Colors.orange,
-                              ),
-                              onPressed: widget.round.completed
-                                  ? null
-                                  : () => _addTallyMark(id),
-                              onLongPress: widget.round.completed
-                                  ? null
-                                  : () => _removeTallyMark(id),
-                            ),
-                            padding: EdgeInsets.zero,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -2164,13 +2172,14 @@ class _SubroundTableState extends State<_SubroundTable> {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Σ'),
                 IconButton(
                   tooltip: 'Ergebnisse vergrößern',
                   icon: const Icon(Icons.zoom_in_rounded),
                   onPressed: () => _showResultsZoom(totals),
                   padding: EdgeInsets.zero,
                 ),
+                const SizedBox(width: 6),
+                const Text('Σ'),
               ],
             ),
             bold: true,
@@ -2208,67 +2217,70 @@ class _SubroundTableState extends State<_SubroundTable> {
       });
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (pageContext) => Scaffold(
-          appBar: AppBar(title: const Text('Ergebnisse')),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(12),
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Table(
-                border: TableBorder(
-                  horizontalInside: BorderSide(
-                    color: Theme.of(pageContext).dividerColor,
-                    width: .6,
+        builder: (pageContext) => _GesturePage(
+          onPinch: () => Navigator.of(pageContext).pop(),
+          child: Scaffold(
+            appBar: AppBar(title: const Text('Ergebnisse')),
+            body: SingleChildScrollView(
+              padding: const EdgeInsets.all(12),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: Table(
+                  border: TableBorder(
+                    horizontalInside: BorderSide(
+                      color: Theme.of(pageContext).dividerColor,
+                      width: .6,
+                    ),
+                    verticalInside: BorderSide(
+                      color: Theme.of(pageContext).dividerColor,
+                      width: .6,
+                    ),
                   ),
-                  verticalInside: BorderSide(
-                    color: Theme.of(pageContext).dividerColor,
-                    width: .6,
-                  ),
-                ),
-                defaultVerticalAlignment: TableCellVerticalAlignment.top,
-                columnWidths: const {
-                  0: FlexColumnWidth(),
-                  1: IntrinsicColumnWidth(),
-                },
-                children: [
-                  for (final entry in sortedResults)
-                    TableRow(
-                      children: [
-                        _tableCell(
-                          pageContext,
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: _playerResultHeader(
-                              pageContext,
-                              entry.key,
-                            ),
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 12,
-                          ),
-                        ),
-                        _tableCell(
-                          pageContext,
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              '${entry.value}',
-                              textAlign: TextAlign.left,
-                              style: const TextStyle(
-                                fontSize: 42,
-                                fontWeight: FontWeight.bold,
+                  defaultVerticalAlignment: TableCellVerticalAlignment.top,
+                  columnWidths: const {
+                    0: FlexColumnWidth(),
+                    1: IntrinsicColumnWidth(),
+                  },
+                  children: [
+                    for (final entry in sortedResults)
+                      TableRow(
+                        children: [
+                          _tableCell(
+                            pageContext,
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: _playerResultHeader(
+                                pageContext,
+                                entry.key,
                               ),
                             ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 12,
+                            ),
                           ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
+                          _tableCell(
+                            pageContext,
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                '${entry.value}',
+                                textAlign: TextAlign.left,
+                                style: const TextStyle(
+                                  fontSize: 42,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                ],
+                        ],
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -3627,6 +3639,51 @@ class _CalculatorButton extends StatelessWidget {
         ),
         onPressed: onPressed,
         child: child,
+      );
+}
+
+class _GesturePage extends StatefulWidget {
+  const _GesturePage({required this.child, required this.onPinch});
+
+  final Widget child;
+  final VoidCallback onPinch;
+
+  @override
+  State<_GesturePage> createState() => _GesturePageState();
+}
+
+class _GesturePageState extends State<_GesturePage> {
+  bool rotated = false;
+  bool pinchHandled = false;
+  bool rotationHandled = false;
+
+  void _handleScaleStart(ScaleStartDetails details) {
+    pinchHandled = false;
+    rotationHandled = false;
+  }
+
+  void _handleScaleUpdate(ScaleUpdateDetails details) {
+    if (!pinchHandled && (details.scale - 1).abs() > .18) {
+      pinchHandled = true;
+      widget.onPinch();
+      return;
+    }
+    if (!rotationHandled && details.rotation.abs() > math.pi * .7) {
+      rotationHandled = true;
+      setState(() => rotated = !rotated);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onScaleStart: _handleScaleStart,
+        onScaleUpdate: _handleScaleUpdate,
+        child: AnimatedRotation(
+          turns: rotated ? .5 : 0,
+          duration: const Duration(milliseconds: 220),
+          child: widget.child,
+        ),
       );
 }
 
