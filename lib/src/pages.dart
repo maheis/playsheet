@@ -2329,11 +2329,12 @@ class _SubroundTableState extends State<_SubroundTable> {
                 draftControllers,
                 id,
                 highlightColor: _playerPrimaryColor(id),
+                emptyAsZero: widget.session.gameBlockId == 'ten_thousand',
                 onChanged: (_) => setState(() {}),
                 onCommit: () => setState(
                   () => committedDraftPlayerIds.add(id),
                 ),
-                onComplete: () => _recordRound(roundNumber),
+                onComplete: () => _recordRoundAndFocusFirst(roundNumber),
                 onNextEmpty: () => _focusNextField(id),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -2431,6 +2432,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     String key, {
     int? value,
     Color? highlightColor,
+    bool emptyAsZero = false,
     bool enabled = true,
     ValueChanged<String>? onChanged,
     VoidCallback? onCommit,
@@ -2446,6 +2448,7 @@ class _SubroundTableState extends State<_SubroundTable> {
       controller: controller,
       focusNode: focusNode,
       highlightColor: highlightColor,
+      emptyAsZero: emptyAsZero,
       onOpenChanged: (open) => calculatorOpeners[key] = open,
       allowNegative: widget.session.gameBlockId != 'ten_thousand',
       enabled: enabled,
@@ -2466,6 +2469,16 @@ class _SubroundTableState extends State<_SubroundTable> {
     });
   }
 
+  Future<void> _recordRoundAndFocusFirst(int roundNumber) async {
+    await _recordRound(roundNumber);
+    if (!mounted || widget.round.playerIds.isEmpty) return;
+    final firstPlayerId = widget.round.playerIds.first;
+    FocusScope.of(context).requestFocus(calculatorFocusNodes[firstPlayerId]);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) calculatorOpeners[firstPlayerId]?.call();
+    });
+  }
+
   String _roundNumber(GameRecord round) {
     final rounds = widget.controller.games
         .where((game) => game.roundId == widget.round.id)
@@ -2481,7 +2494,9 @@ class _SubroundTableState extends State<_SubroundTable> {
     final scores = <String, int>{};
     for (final id in widget.round.playerIds) {
       final text = draftControllers[id]?.text.trim() ?? '';
-      final score = int.tryParse(text);
+      final score = text.isEmpty && widget.session.gameBlockId == 'ten_thousand'
+          ? 0
+          : int.tryParse(text);
       if (score != null && !_isValidScore(score)) {
         _showInvalidScoreError();
         return;
@@ -2547,7 +2562,7 @@ class _SubroundTableState extends State<_SubroundTable> {
   bool _isValidScore(int score) {
     if (!_allowsNegativeScores && score < 0) return false;
     if (widget.session.gameBlockId == 'ten_thousand') {
-      return score >= 350 && score % 50 == 0;
+      return score == 0 || (score >= 350 && score % 50 == 0);
     }
     return true;
   }
@@ -3232,6 +3247,7 @@ class _CalculatorField extends StatefulWidget {
     required this.controller,
     this.focusNode,
     this.highlightColor,
+    this.emptyAsZero = false,
     this.onOpenChanged,
     this.onChanged,
     this.onCommit,
@@ -3244,6 +3260,7 @@ class _CalculatorField extends StatefulWidget {
   final TextEditingController controller;
   final FocusNode? focusNode;
   final Color? highlightColor;
+  final bool emptyAsZero;
   final ValueChanged<VoidCallback>? onOpenChanged;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onCommit;
@@ -3316,6 +3333,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
         child: _CalculatorPad(
           initialExpression: expression,
           allowNegative: widget.allowNegative,
+          emptyAsZero: widget.emptyAsZero,
           highlightColor: widget.highlightColor,
           onExpressionChanged: (value) {
             expression = value;
@@ -3380,6 +3398,7 @@ class _CalculatorPad extends StatefulWidget {
     required this.initialExpression,
     required this.allowNegative,
     required this.onExpressionChanged,
+    this.emptyAsZero = false,
     this.highlightColor,
     this.onComplete,
     this.onNextEmpty,
@@ -3388,6 +3407,7 @@ class _CalculatorPad extends StatefulWidget {
   final String initialExpression;
   final bool allowNegative;
   final ValueChanged<String> onExpressionChanged;
+  final bool emptyAsZero;
   final Color? highlightColor;
   final VoidCallback? onComplete;
   final VoidCallback? onNextEmpty;
@@ -3427,10 +3447,13 @@ class _CalculatorPadState extends State<_CalculatorPad> {
 
   void _calculate({bool complete = false, bool nextEmpty = false}) {
     final result = _calculateExpression(expression);
-    if (result == null) return;
+    if (result == null && !(complete && widget.emptyAsZero)) return;
     if (complete) widget.onComplete?.call();
     if (nextEmpty) widget.onNextEmpty?.call();
-    Navigator.pop(context, _formatCalculatorValue(result));
+    Navigator.pop(
+      context,
+      result == null ? '0' : _formatCalculatorValue(result),
+    );
   }
 
   @override

@@ -24,3 +24,6 @@
 - [x] Dran optional weiter schieben wenn Feldwechsel ist (z.B. bei 10Tausend)
 - [x] Zoom-Knopf (neben dem Summenzeichen) für das Ergebnis, dabei soll in der ersten Spalte die Spieler stehen und Rechts in einer Spalte die entsprechenden Ergebnisse angezeigt werden. Schriftgröße dreimal so groß und Sortierung nach den Ergebnissen (Absteigend bei Hoch gewinnt und Aufsteigend bei Tief gewinnt)
 - [x] Enter nicht die Runde abschließen
+- [x] Zehnzausend 0 erlauben
+- [ ] Geber weiterschieben, wenn nichts drin steht
+- [x] + soll ins erste Feld wechseln
