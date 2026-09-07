@@ -1578,7 +1578,22 @@ class _SubroundTableState extends State<_SubroundTable> {
                     ),
                     TableRow(
                       children: [
-                        _tableCell(context, const Text('Σ'), bold: true),
+                        _tableCell(
+                          context,
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('Σ'),
+                              IconButton(
+                                tooltip: 'Ergebnisse vergrößern',
+                                icon: const Icon(Icons.zoom_in_rounded),
+                                onPressed: () => _showResultsZoom(counts),
+                                padding: EdgeInsets.zero,
+                              ),
+                            ],
+                          ),
+                          bold: true,
+                        ),
                         ...widget.round.playerIds.map(
                           (id) => _tableCell(
                             context,
@@ -2123,15 +2138,6 @@ class _SubroundTableState extends State<_SubroundTable> {
             ),
           ),
           const SizedBox(height: 2),
-          if (isDealer)
-            Text(
-              'Dran',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 9,
-                  ),
-            ),
           Text(
             name,
             maxLines: 1,
@@ -2153,7 +2159,22 @@ class _SubroundTableState extends State<_SubroundTable> {
   ) =>
       TableRow(
         children: [
-          _tableCell(context, const Text('Σ'), bold: true),
+          _tableCell(
+            context,
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Σ'),
+                IconButton(
+                  tooltip: 'Ergebnisse vergrößern',
+                  icon: const Icon(Icons.zoom_in_rounded),
+                  onPressed: () => _showResultsZoom(totals),
+                  padding: EdgeInsets.zero,
+                ),
+              ],
+            ),
+            bold: true,
+          ),
           ...widget.round.playerIds.map((id) {
             final value = totals[id] ?? 0;
             final isWinner = winningValue != null && value == winningValue;
@@ -2175,6 +2196,120 @@ class _SubroundTableState extends State<_SubroundTable> {
           }),
         ],
       );
+
+  Future<void> _showResultsZoom(Map<String, int> results) async {
+    final sortedResults = [
+      ...results.entries,
+    ]..sort((first, second) {
+        final result = widget.session.highWins
+            ? second.value.compareTo(first.value)
+            : first.value.compareTo(second.value);
+        return result;
+      });
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (pageContext) => Scaffold(
+          appBar: AppBar(title: const Text('Ergebnisse')),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(12),
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Table(
+                border: TableBorder(
+                  horizontalInside: BorderSide(
+                    color: Theme.of(pageContext).dividerColor,
+                    width: .6,
+                  ),
+                  verticalInside: BorderSide(
+                    color: Theme.of(pageContext).dividerColor,
+                    width: .6,
+                  ),
+                ),
+                defaultVerticalAlignment: TableCellVerticalAlignment.top,
+                columnWidths: const {
+                  0: FlexColumnWidth(),
+                  1: IntrinsicColumnWidth(),
+                },
+                children: [
+                  for (final entry in sortedResults)
+                    TableRow(
+                      children: [
+                        _tableCell(
+                          pageContext,
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: _playerResultHeader(
+                              pageContext,
+                              entry.key,
+                            ),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                        _tableCell(
+                          pageContext,
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              '${entry.value}',
+                              textAlign: TextAlign.left,
+                              style: const TextStyle(
+                                fontSize: 42,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _playerResultHeader(BuildContext context, String id) {
+    final player = widget.controller.playerById(id);
+    final name = player?.name.isNotEmpty == true ? player!.name : 'Unbekannt';
+    final primary = player?.primaryColorValue == null
+        ? Theme.of(context).colorScheme.primary
+        : Color(player!.primaryColorValue!);
+    final secondary = player?.secondaryColorValue == null
+        ? (primary.computeLuminance() > .5 ? Colors.black : Colors.white)
+        : Color(player!.secondaryColorValue!);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          name,
+          textAlign: TextAlign.right,
+          style: const TextStyle(fontSize: 42),
+        ),
+        const SizedBox(width: 12),
+        CircleAvatar(
+          radius: 24,
+          backgroundColor: primary,
+          child: Text(
+            name.characters.first.toUpperCase(),
+            style: TextStyle(
+              fontSize: 22,
+              color: secondary,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   TableRow _draftRow(BuildContext context, int roundNumber) => TableRow(
         children: [
@@ -2199,7 +2334,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                   () => committedDraftPlayerIds.add(id),
                 ),
                 onComplete: () => _recordRound(roundNumber),
-                onNextEmpty: () => _advanceAfterEnter(id, roundNumber),
+                onNextEmpty: () => _focusNextField(id),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 8),
             ),
@@ -2329,23 +2464,6 @@ class _SubroundTableState extends State<_SubroundTable> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) calculatorOpeners[nextId]?.call();
     });
-  }
-
-  Future<void> _advanceAfterEnter(String currentId, int roundNumber) async {
-    final currentIndex = widget.round.playerIds.indexOf(currentId);
-    if (currentIndex == widget.round.playerIds.length - 1) {
-      await _recordRound(roundNumber);
-      if (!mounted || widget.round.playerIds.isEmpty) return;
-      final firstPlayerId = widget.round.playerIds.first;
-      FocusScope.of(context).requestFocus(
-        calculatorFocusNodes[firstPlayerId],
-      );
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) calculatorOpeners[firstPlayerId]?.call();
-      });
-      return;
-    }
-    _focusNextField(currentId);
   }
 
   String _roundNumber(GameRecord round) {
