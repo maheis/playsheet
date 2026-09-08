@@ -3497,6 +3497,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
+      barrierColor: Colors.transparent,
       constraints: BoxConstraints(
         maxWidth: availableWidth,
         maxHeight: availableHeight,
