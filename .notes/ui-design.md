@@ -1,216 +1,113 @@
-# UI-Design-Richtlinie: VolleyAce
+# UI-Design-Richtlinie: PlaySheet
 
-Diese Richtlinie beschreibt den aktuell überprüften visuellen Stand von VolleyAce. Sie dient als Referenz für weitere UI-Arbeiten.
-
-## Implementierungsabgleich (2026-09)
-
-| Bereich | Status | Tatsächlicher Stand |
-|---|---|---|
-| Material 3 | umgesetzt | `ThemeData(useMaterial3: true)` |
-| Dark/Light-Theme | umgesetzt | Dark ist Standard; Light kann in den Einstellungen aktiviert werden |
-| Farben | umgesetzt | Akzent- und Highlightfarbe sind konfigurierbar; Teamfarben enthalten zusätzlich Schwarz und Weiß |
-| Typografie | umgesetzt | Ubuntu als Standard; OpenDyslexic, NotoSans, CourierPrime und Ubuntu Mono verfügbar |
-| Schriftgröße | umgesetzt | Global über `MediaQuery.textScaler` skalierbar |
-| Module | umgesetzt | Punktetafel, Taktiktafel, Teams, Training, Statistik und Arcade vorhanden |
-| Responsive Design | teilweise | Zentrale Ansichten reagieren auf verfügbare Fläche; vollständiger Unterseiten-Abgleich offen |
-| Accessibility | teilweise | Mehrere `Semantics`- und Tooltip-Beschriftungen vorhanden; vollständige Prüfung offen |
-
----
+Diese Dokumentation beschreibt den aktuellen visuellen Aufbau von PlaySheet und dient als verbindliche Orientierung fuer weitere UI-Arbeiten.
 
 ## Leitbild
 
-Eine fokussierte Sport- und Assistenz-App für Trainer, Spieler und Schiedsrichter. Die Bedienung muss während eines Spiels schnell erfassbar sein; Spielstand, Daten und nächste Aktion stehen im Vordergrund.
+PlaySheet ist ein digitaler Spielblock fuer Spielrunden, Punkte und Spieler. Die Oberflaeche soll beim laufenden Spiel schnell erfassbar sein: Spielart, aktueller Stand und naechste Aktion muessen ohne Umwege erreichbar sein.
 
----
+## Implementierungsabgleich
 
-## Theme
-
-| Eigenschaft | Wert |
-|---|---|
-| Helligkeit | Dark standardmäßig, Light optional (`Brightness.dark` / `Brightness.light`) |
-| Seed-Farbe | konfigurierbare Akzentfarbe, standardmäßig Rot (`#e57373`) |
-| Erzeugung | `ColorScheme.fromSeed` mit dynamischer Helligkeit, Orange als `secondary` und Mint als `tertiary` |
-| Flutter-Widget | `ThemeData` mit `colorScheme`, kein `primarySwatch` |
-
-Das Theme basiert auf `ColorScheme.fromSeed` und ergänzt semantische sowie konfigurierbare Farben. Die App unterstützt Dark und Light.
-
----
-
-## Farben
-
-### Farbpalette
-
-aed581 - grün
-fff176 - gelb
-64b5f6 - blau
-e57373 - rot
-8fdcbe - mint
-9575cd - lila
-ffb74d - orange
-
-### Strukturfarben (aus ColorScheme)
-
-Alle Hintergründe, Oberflächen und Standard-Text kommen aus dem generierten `ColorScheme` — nie hartcodierte Hex-Werte für strukturelle UI.
-
-| Rolle | Flutter-Token | Verwendung |
+| Bereich | Status | Aktueller Stand |
 |---|---|---|
-| Hintergrund | `cs.surface` | Seiten-Hintergrund |
-| Karten/Container | `cs.primaryContainer`, `cs.secondaryContainer` | Task-Karten, Panels |
-| Primärtext | `cs.onSurface` | Standard-Textfarbe |
-| Sekundärtext | `cs.onSurfaceVariant` | Datum, Metadaten, Hinweise |
+| Material 3 | umgesetzt | `ThemeData(useMaterial3: true)` |
+| Dark/Light-Theme | umgesetzt | Dark ist Standard, Light ist in den Einstellungen aktivierbar |
+| Akzent- und Highlightfarben | umgesetzt | Farben werden aus einer festen Palette gewaehlt |
+| Typografie | umgesetzt | Ubuntu ist Standard; weitere Fonts sind eingebunden |
+| Globale Textskalierung | umgesetzt | 50 % bis 160 % |
+| Hauptnavigation | umgesetzt | Startseite, Spieler, Einstellungen, Spielarten und Spielrunden |
+| Spielmodule | umgesetzt | `1 + 2 = 3`, `3 +- 2 = 1`, Dam'jagen, 10Tausend, Strichliste, Wuerfelblock, Kingdomino |
+| Accessibility | teilweise | Tooltips und skalierbare Schrift vorhanden; vollstaendige Tastatur-/Screenreader-Pruefung offen |
 
-### Semantische Farben (hartcodiert)
+## Theme und Farben
 
-Diese Farben haben eine feste Bedeutung und werden konsistent über die ganze App verwendet:
+Das Theme wird in `lib/src/app.dart` aus `ColorScheme.fromSeed` erzeugt. Die konfigurierbare Akzentfarbe ist `colorScheme.primary`; Orange wird als sekundaere und Mint als tertiaere Farbe verwendet. Die Highlight-Farbe steuert Icons, Schaltflaechen, Auswahlzustande und Eingabefokus.
 
-| Bedeutung | Farbe | Flutter-Wert |
+| Rolle | Quelle / Wert | Verwendung |
 |---|---|---|
-| Punkteteam links | Blau | `Color(0xFF64B5F6)` |
-| Punkteteam rechts | Rot | `Color(0xFFE57373)` |
-| Positive Zustände | Grün | `Color(0xFFAED581)` |
-| Hervorhebung | Gelb / Orange | `Color(0xFFFFF176)` / `Color(0xFFFFB74D)` |
-| Fehler / destruktive Aktion | Rot | `Color(0xFFE57373)` |
-| Transparent / kein Hintergrund | — | `Colors.transparent` |
+| Hintergrund | `colorScheme.surface` | Scaffold und Seitenflaechen |
+| Primaerfarbe | `AppSettings.accentColorValue` | App-Logo, primaere Aktionen, aktive Elemente |
+| Highlight | `AppSettings.highlightColorValue` | Icons, Controls, Slider, Fokus und Buttons |
+| Sekundaer | `Color(0xFFFFB74D)` | sekundare Theme-Akzente |
+| Tertiaer | `Color(0xFF8FDCBE)` | tertiaere Theme-Akzente |
+| Fehler | Theme-/Material-Fehlerfarbe | Validierungs- und Eingabefehler |
 
-**Regel:** Statusfarben niemals als Hintergrundfarbe — immer als Textfarbe oder Icon-Farbe einsetzen.
+Verfuegbare Akzent- und Highlightfarben: Rot, Orange, Gruen, Gelb, Blau, Mint und Lila. Spieler duerfen zusaetzlich Schwarz und Weiss erhalten.
 
----
+Strukturfarben kommen aus dem `ColorScheme`. Spielbezogene Farben werden nur zur Unterscheidung von Spielarten, Spielern oder Kategorien eingesetzt und nicht als alleiniger Statushinweis.
 
 ## Typografie
 
-### Schriftarten
+Ubuntu ist die Standardschrift. Verfuegbar sind ausserdem OpenDyslexic, NotoSans, CourierPrime und Ubuntu Mono. Die Auswahl wird global ueber `ThemeData.fontFamily` angewendet; die Textskalierung wird am `MaterialApp` ueber `MediaQuery.textScaler` gesetzt.
 
-Die App bietet fünf Fonts zur Auswahl — Ubuntu ist Standard; OpenDyslexic bleibt als zugängliche Alternative verfügbar:
-
-| Font | Einsatz |
+| Verwendung | Richtwert |
 |---|---|
-| OpenDyslexic | Alternative — verbesserte Lesbarkeit für Dyslexiker |
-| NotoSans | Saubere Alternative, System-nah |
-| CourierPrime | Monospace-Option |
-| Ubuntu | Standard |
-| Ubuntu Mono | Monospace-Option |
+| AppBar-Titel | `titleLarge` bzw. ca. 20 bis 24 px |
+| Bereichsueberschrift | `titleLarge`, fett |
+| Spiel- und Spielername | `titleMedium` |
+| Punktwerte und Rechneranzeige | gross, kontrastreich, kontextabhaengig |
+| Zusatzinformationen | `bodySmall` bzw. `onSurfaceVariant` |
 
-Alle Fonts werden über `pubspec.yaml` als Asset eingebunden (`assets/fonts/`). Der gewählte Font wird über die Einstellungen global auf das `ThemeData` angewendet.
+Punktwerte, Eingabefelder und Rechneranzeige benoetigen klare Zahlenformen und ausreichend Platz. Textskalierung darf keine Werte, Buttons oder Tabellen abschneiden.
 
-```dart
-// Font auf das gesamte Theme anwenden
-data: baseTheme.copyWith(
-  textTheme: baseTheme.textTheme.apply(fontFamily: _fontFamily),
-  primaryTextTheme: baseTheme.primaryTextTheme.apply(fontFamily: _fontFamily),
-)
-```
+## Layout und Navigation
 
-### Größenskala
+- Die Startseite verwendet eine vertikale Liste aus Karten fuer die verfuegbaren Spielarten.
+- Jede Spielarten-Karte zeigt Icon oder Spielsymbol, Namen, Kurzbeschreibung bzw. Spielanzahl und einen Chevron.
+- Spielrunden werden ueber `AppBar`, Listen und Karten erreicht.
+- Spieler und Einstellungen sind globale Bereiche der Startseite.
+- Listen verwenden einheitliche Innenabstaende von meist 12 bis 16 px.
+- Spielansichten priorisieren die Eingabe von Punkten und halten sekundare Aktionen aus dem unmittelbaren Eingabebereich heraus.
+- Der Taschenrechner wird als `showModalBottomSheet` geoeffnet; seine Barriere ist transparent, damit der Spielstand im Hintergrund sichtbar bleibt.
 
-| Verwendung | Größe | Gewicht |
-|---|---|---|
-| Screen-Titel / Hero | 24 | `w700` |
-| Abschnitts-Überschrift | 18–19 | `bold` / `w700` |
-| Standard-Body / Task-Titel | 15–16 | normal / `w600` |
-| Sekundär / Label | 12–14 | normal |
-| Kleintext / Metadaten | 10–11 | normal |
+## Komponenten
 
-Die Basis-Schriftgröße (`_baseFontSize`) liegt bei **15.0** und wird für Task-Text verwendet.
+### Karten und Listen
 
----
+- `Card` und `ListTile` strukturieren Spielarten, Spielrunden und Spieler.
+- Karten verwenden abgerundete Interaktionen mit `InkWell`.
+- Leere Zustaende werden durch kurze, sichtbare Hinweise erklaert.
+- Datum, Spieler und letzte Aktivitaet erscheinen als Sekundaerinformationen.
 
-## Abstände (Spacing)
+### Aktionen
 
-Kein eigenes Spacing-System — es gelten folgende bevorzugte Werte in der Praxis:
+- Primaere Aktionen verwenden `ElevatedButton`, `FilledButton` oder klar erkennbare Kartenaktionen.
+- Sekundaere Aktionen verwenden `TextButton` oder `OutlinedButton`.
+- Icon-only-Aktionen sind fuer bekannte Werkzeugaktionen zulaessig und erhalten Tooltips.
+- Destruktive Aktionen werden bestaetigt und visuell eindeutig gekennzeichnet.
 
-| Token | Wert | Typische Verwendung |
-|---|---|---|
-| xs | 4 px | Minimaler Innenabstand, Icon-Gaps |
-| sm | 6–8 px | Standard-Padding horizontal |
-| md | 12 px | Standard-Padding vertikal, Listenabstände |
-| lg | 16 px | Abschnitte, größere Container |
+### Spielwert-Eingabe
 
-Häufigste Padding-Werte: `horizontal: 12`, `vertical: 6–8`.
+- Punktfelder zeigen ihren aktuellen Wert direkt.
+- Der Rechner unterstuetzt Ausdruckseingabe, negative Werte, Leeren und Abschlussaktionen.
+- Eingabefehler werden erst beim Speichern bewertet, damit die laufende Eingabe nicht durch vorzeitige Snackbars gestoert wird.
+- Wuerfelblock-Eingaben bleiben waehrend der Eingabe ruhig; die Validierung erfolgt beim Speichern.
 
----
+### Dialoge und Overlays
 
-## Eckenradien
+- Standardmaessig werden `AlertDialog` und `showModalBottomSheet` verwendet.
+- Der Rechner nutzt keine starke Hintergrundabdunklung.
+- Snackbars folgen dem globalen Theme und passen sich an Dark-/Light-Mode sowie die Akzentfarbe an.
 
-| Element | Radius |
+## Icons und Symbole
+
+Es werden Material Icons sowie das vorhandene PlaySheet-SVG-Logo verwendet. Spielarten duerfen zusaetzliche Textsymbole nutzen, wenn sie fuer den jeweiligen Spielblock charakteristisch sind.
+
+| Zweck | Beispiel |
 |---|---|
-| Buttons, Chips, kleine Karten | `BorderRadius.circular(12)` |
-| Größere Container / Dialoge | `BorderRadius.circular(14)` |
+| Einstellungen | `Icons.settings_rounded` |
+| Spieler | `Icons.people_alt_rounded` |
+| Hinzufuegen | `Icons.add_rounded` |
+| Spielrunde starten | `Icons.play_arrow_rounded` |
+| Wuerfel | `Icons.casino_rounded` |
+| Navigation | `Icons.chevron_right_rounded` |
+| Datum | `Icons.event_outlined` |
 
----
+## Accessibility und Qualitaet
 
-## Icons
-
-Ausschließlich **Material Icons** (`Icons.*`) aus dem Flutter-Standard-Set. Kein eigenes Icon-Set, keine externen Icon-Pakete.
-
-Bevorzugt werden `_rounded`-Varianten wenn vorhanden (z. B. `Icons.download_rounded`, `Icons.upload_rounded`).
-
-Wichtige Icons und ihre Bedeutung in der App:
-
-| Icon | Bedeutung |
-|---|---|
-| `Icons.radio_button_unchecked` | Aufgabe offen |
-| `Icons.task_alt` | Aufgabe erledigt |
-| `Icons.star` / `Icons.star_border` | Wichtig (Flag) |
-| `Icons.play_arrow` / `Icons.stop` | In Bearbeitung starten/stoppen |
-| `Icons.push_pin` / `Icons.push_pin_outlined` | Angeheftet |
-| `Icons.drag_handle` | Drag & Drop Handle |
-| `Icons.calendar_today` | Datum |
-| `Icons.timelapse` | Zeiterfassung |
-| `Icons.delete` / `Icons.delete_forever` | Löschen / endgültig löschen |
-| `Icons.sync` | Cloud-Sync |
-| `Icons.more_vert` | Kontextmenü |
-
----
-
-## Komponenten-Konventionen
-
-### Task-Zeile
-
-- Hintergrund: kein farbiger Hintergrund — nur der Kartencontainer (`Card` oder `ColorScheme`-Container)
-- Textfarbe zeigt den Status (siehe semantische Farben)
-- Linke Seite: Status-Icon (offen/erledigt)
-- Rechte Seite: Aktions-Icons (`IconButton` mit `tapTargetSize: MaterialTapTargetSize.shrinkWrap`)
-- Gedimmter Text bei erledigten Aufgaben (60 % Opacity)
-
-### Buttons
-
-- Primäraktion: `ElevatedButton`
-- Sekundäraktion / Abbrechen: `TextButton`
-- Ikonbasierte Aktionen in Listen: `IconButton`
-- Destruktive Aktionen (Löschen): `foregroundColor: Color(0xFFe57373)`, `BorderSide(color: Color(0xFFe57373))`
-
-### Dialoge
-
-- Standard Flutter `AlertDialog` / `showDialog`
-- Keine Custom-Dialog-Rahmen
-
-### Listen
-
-- `ListView` ohne Trennlinien (kein `Divider`)
-- Drag & Drop via `ReorderableListView` mit `Icons.drag_handle`
-
----
-
-## Layout
-
-- **Modulstruktur:** Startseite | Punktetafel | Taktiktafel | Teams | Training | Statistik
-- AppBars sind Bestandteil der aktuellen Navigation und enthalten kontextbezogene Aktionen.
-- FloatingActionButtons können für kontextbezogene Primäraktionen verwendet werden.
-- Statuszeile (Sync-Status, Uhrzeit) oben im Panel, klein (fontSize 11)
-
----
-
-## Barrierefreiheit
-
-- **OpenDyslexic als verfügbare Alternative** — Ubuntu ist aktuell die Standardschrift
-- Schriftgröße benutzerkonfigurierbar (Settings)
-- Kontraste folgen dem generierten Dark ColorScheme (Material Design-konform)
-- Alle `IconButton`s haben `tooltip`
-- Keine reinen Farbsignale — Icons, Zahlen oder Text begleiten Farbänderungen
-
-## Noch zu prüfen
-
-- Vollständiges Responsive-Design aller Unterseiten.
-- Vollständige Tastaturnavigation und Screenreader-Beschriftungen.
-- Kontrastprüfung beider Themes und der Teamfarben.
-- Einheitliche Übersetzung aller Texte, falls weitere Sprachen angeboten werden.
+- Controls erhalten sichtbare Beschriftungen.
+- IconButtons erhalten Tooltips.
+- Farbunterschiede werden durch Text, Icons oder Zahlen ergaenzt.
+- Grosse Schrift muss Karten, Punktfelder, Tabellen und Rechnerbuttons ohne Ueberlappung darstellen.
+- Dark- und Light-Theme sowie alle waehlbaren Farben muessen auf Kontrast geprueft werden.
+- Tastaturbedienung und Screenreader-Semantics sind noch vollstaendig zu pruefen.

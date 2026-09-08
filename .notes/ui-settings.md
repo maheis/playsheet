@@ -1,190 +1,118 @@
-# UI-Settings-Grundlage: VolleyAce
+# UI-Settings-Dokumentation: PlaySheet
 
-Diese Dokumentation beschreibt den aktuellen Aufbau der Einstellungen von VolleyAce und leitet daraus ein wiederverwendbares Muster fuer Settings-Seiten in neuen Anwendungen ab.
+Diese Dokumentation beschreibt die globalen Einstellungen von PlaySheet, ihre Speicherung und ihre Laufzeitwirkung.
 
-## 1. Aktueller Umfang
+## Umfang
 
-VolleyAce konzentriert die globalen Einstellungen auf wenige, direkt wirksame Optionen:
+PlaySheet konzentriert die globalen Einstellungen auf Darstellung und Lesbarkeit:
 
-- **Darstellung:** Theme-Modus, Akzentfarbe und Highlight-Farbe.
-- **Typografie:** Schriftfamilie und globale Textskalierung.
-- **Bedienbarkeit:** bessere Lesbarkeit durch Schriftwahl und Skalierung.
+- Schriftfamilie
+- globale Textskalierung
+- Light-/Dark-Theme
+- Akzentfarbe
+- Highlight-Farbe
 
-Fachliche Einstellungen fuer Punktetafel, Taktik, Teams, Training, Statistik und Arcade bleiben in den jeweiligen Modulen. Dadurch bleibt die globale Settings-Seite klein und die Optionen bleiben dort, wo ihr Kontext bekannt ist.
+Spielregeln, Spielarten, Spielerfarben und spielbezogene Werte bleiben in den jeweiligen Spiel- und Spielerbereichen. Dadurch bleibt die globale Settings-Seite uebersichtlich.
 
-## 2. Settings-Modell
+## Settings-Modell
 
-Das zentrale Modell liegt in `lib/src/settings/app_settings.dart` und ist immutable:
+Das Modell `AppSettings` liegt in `lib/src/settings.dart`. Es ist unveraenderlich und besitzt zentrale Defaults:
 
 | Feld | Typ | Default | Bedeutung |
 |---|---|---|---|
 | `fontFamily` | `String` | `Ubuntu` | Global verwendete Schriftfamilie |
 | `textScaleFactor` | `double` | `1.0` | Globale Textskalierung, begrenzt auf 0.5 bis 1.6 |
 | `useLightTheme` | `bool` | `false` | Light-Theme aktivieren; Dark ist Standard |
-| `accentColorValue` | `int` | `0xFFE57373` | Seed-/Akzentfarbe |
-| `highlightColorValue` | `int` | `0xFFFFB74D` | Hervorhebungsfarbe fuer Controls |
+| `accentColorValue` | `int` | `0xFFE57373` | Primaer-/Seed-Farbe |
+| `highlightColorValue` | `int` | `0xFFFFB74D` | Farbe fuer Controls und Hervorhebungen |
 
 Verfuegbare Fonts:
 
+- Ubuntu
 - OpenDyslexic
 - NotoSans
 - CourierPrime
-- Ubuntu
 - Ubuntu Mono
 
-`copyWith` erlaubt kontrollierte Teilupdates, ohne das Modell zu mutieren.
+Verfuegbare Farben: Rot, Orange, Gruen, Gelb, Blau, Mint und Lila. Fuer Spielerfarben sind zusaetzlich Schwarz und Weiss erlaubt.
 
-## 3. Seitenaufbau
+## Settings-Seite
 
-Die `SettingsPage` ist eine zustandsbehaftete Seite mit `Scaffold`, `AppBar` und scrollbarer `ListView`.
+Die `SettingsPage` in `lib/src/pages.dart` ist eine scrollbare `ListView` in einem `Scaffold` mit `AppBar`.
 
-Reihenfolge der Controls:
+Aktuelle Reihenfolge:
 
 1. Schriftart
-2. Theme-Modus
-3. Akzentfarbe
-4. Highlight-Farbe
-5. Schriftgroesse
-6. Vorschau
+2. Schriftgroesse
+3. Helles Theme
+4. Akzentfarbe
+5. Highlight-Farbe
 
 | Einstellung | Control | Verhalten |
 |---|---|---|
-| Schriftart | `DropdownButton<String>` | Auswahl aus erlaubter Liste |
-| Theme | `SwitchListTile` | Hell/Dunkel umschalten |
-| Akzentfarbe | Dropdown mit Farbswatch | Auswahl aus `AppPalette.accentColors` |
-| Highlight-Farbe | Dropdown mit Farbswatch | Auswahl aus `AppPalette.accentColors` |
+| Schriftart | `DropdownButtonFormField<String>` | Auswahl aus den eingebundenen Fonts |
 | Schriftgroesse | `Slider` | 50 % bis 160 %, 22 Schritte |
-| Ergebnis | Vorschau-Card | zeigt die Wirkung der Auswahl |
+| Helles Theme | `SwitchListTile` | Light-/Dark-Theme umschalten |
+| Akzentfarbe | `DropdownButtonFormField<int>` | Farbswatch und Farbname aus der erlaubten Palette |
+| Highlight-Farbe | `DropdownButtonFormField<int>` | Farbswatch und Farbname aus der erlaubten Palette |
 
-Die Seite arbeitet mit lokalen Entwurfswerten. Erst beim Druecken von **Speichern** wird ein neues `AppSettings`-Objekt an die Anwendung zurueckgegeben. Bei ungespeicherten Aenderungen muss das Verlassen bestaetigt werden.
+Aenderungen werden direkt uebernommen und gespeichert. Die Seite besitzt aktuell keinen separaten Speichern- oder Verwerfen-Schritt.
 
-## 4. Architektur und Aenderungsfluss
+## Architektur und Aenderungsfluss
 
 ```text
 SettingsPage
-    |
-SettingsController extends ChangeNotifier
-    |
-AppSettings (immutable model)
-    |
-SettingsRepository
-    |
-Sembast settings store
-```
-
-```text
-App
-    -> SettingsController.load()
-    -> SettingsRepository.load()
-    -> AppSettings
-    -> SettingsPage(initial: settings)
-    -> lokale Entwurfswerte
-    -> Speichern
-    -> SettingsController.update(newSettings)
+    -> AppSettings.copyWith(...)
+    -> SettingsController.update(value)
     -> notifyListeners()
-    -> SettingsRepository.save(newSettings)
+    -> AppSettings im App-Root anwenden
+    -> playsheet_settings.json speichern
 ```
 
-Der Controller ist die Laufzeit-Schnittstelle:
+`SettingsController` liegt ebenfalls in `lib/src/settings.dart`:
 
-- `load()` laedt die Settings aus dem Repository.
-- `settings` stellt den aktuellen Wert bereit.
-- `isLoaded` zeigt den abgeschlossenen Ladevorgang an.
-- `update(...)` veroeffentlicht und speichert neue Settings.
+- `load()` liest zuerst die JSON-Datei.
+- Falls sie nicht vorhanden oder leer ist, werden Legacy-Werte aus `SharedPreferences` verwendet.
+- `update(...)` veroeffentlicht den neuen Wert sofort und schreibt anschliessend JSON.
+- Ungueltige Farbwerte fallen auf den jeweiligen Default zurueck.
+- Die Textskalierung wird beim Laden auf den Bereich 0.5 bis 1.6 begrenzt.
 
-Die Settings-Seite greift nicht direkt auf Sembast oder Plattform-APIs zu.
+Die Settings-Seite greift nicht direkt auf das Dateiformat zu.
 
-## 5. Laufzeitwirkung
+## Speicherung und Migration
 
-Die globalen Einstellungen werden in `app.dart` angewendet:
+- Dateiname: `playsheet_settings.json`
+- Speicherort: `getApplicationDocumentsDirectory()`
+- Format: eingeruecktes JSON-Objekt
+- Legacy-Quelle: `SharedPreferences`
+- Persistierte Schluessel: `fontFamily`, `textScaleFactor`, `useLightTheme`, `accentColorValue`, `highlightColorValue`
 
-- `theme` und `darkTheme` werden mit `ColorScheme.fromSeed` erzeugt.
+Das Laden ist fehlertolerant: Defekte oder fehlende JSON-Werte verhindern den Start nicht, sondern werden durch Defaults ersetzt. Die Legacy-Werte werden nur als Rueckfall verwendet, wenn die JSON-Datei keine Daten liefert.
+
+## Laufzeitwirkung
+
+`PlaySheetApp` in `lib/src/app.dart` beobachtet den `SettingsController` mit `AnimatedBuilder` und erstellt bei Aenderungen die Themes neu:
+
+- `theme` und `darkTheme` verwenden `ColorScheme.fromSeed`.
 - `themeMode` folgt `useLightTheme`.
-- `fontFamily` wird auf `textTheme` und `primaryTextTheme` angewendet.
-- `MediaQuery.textScaler` nutzt `textScaleFactor`.
-- Akzent- und Highlight-Farben werden in Theme-Komponenten verwendet.
+- `fontFamily` wird global auf `ThemeData` gesetzt.
+- `MediaQuery.textScaler` verwendet `textScaleFactor`.
+- Akzentfarbe wird als primaere Theme-Farbe verwendet.
+- Highlight-Farbe wird auf Icons, Buttons, Slider, Checkboxen, Radios, Switches und Eingabefokus angewendet.
+- Snackbars erhalten eine aus Surface und Akzentfarbe berechnete Hintergrundfarbe mit kontrastierender Schrift.
 
-Damit wirken Aenderungen auf Navigation, Buttons, Eingabefelder, FABs, Snackbar, Icons und die fachlichen Module.
+## UX-Regeln
 
-## 6. Speicherung und Migration
+- Jede Einstellung zeigt ihren aktuellen Wert direkt.
+- Farbauswahl kombiniert Farbswatch und Name.
+- Der Slider zeigt Prozentwert, Minimum und Maximum.
+- Themewechsel muss ohne Neustart sichtbar werden.
+- Sensible oder destruktive Datenfunktionen gehoeren nicht in diese globale Seite.
+- Bei wachsendem Umfang sollten Einstellungen nach Darstellung, Eingabe und Daten getrennt werden.
 
-`SettingsRepository` speichert einen einzelnen lokalen Sembast-Record:
+## Offene Qualitaetspruefungen
 
-- Store: `settings`
-- Record-Key: `app`
-- Persistierte Schluessel: `fontFamily`, `uiTextScaleFactor`, `useLightTheme`, `accentColorValue`, `highlightColorValue`
-- Werte werden beim Laden validiert und begrenzt.
-- Unbekannte oder fehlende Werte fallen auf `AppSettings.defaults` zurueck.
-- Migrationen werden ueber `fontFamilyMigratedToUbuntu` und `themePreferenceMigratedToLightMode` markiert.
-
-Das Repository kennt Speicherformat und Migration; die Seite kennt nur das Modell. Dieses Muster ist fuer neue Anwendungen gut wiederverwendbar.
-
-## 7. Vorlage fuer neue Anwendungen
-
-| Baustein | Verantwortung |
-|---|---|
-| `AppSettings` | typisierte Werte, Defaults, `copyWith` |
-| `SettingsPage` | Eingabe, Vorschau, Speichern/Verwerfen |
-| `SettingsController` | Laden, Veröffentlichen, Speichern |
-| `SettingsRepository` | Persistenz, Validierung, Migration |
-| Storage-Adapter | konkretes lokales Backend |
-| App-Root | globale Anwendung von Theme, Font und Skalierung |
-
-Empfohlene Grundstruktur:
-
-```dart
-@immutable
-class AppSettings {
-  const AppSettings({
-    required this.fontFamily,
-    required this.textScaleFactor,
-    required this.useLightTheme,
-  });
-
-  final String fontFamily;
-  final double textScaleFactor;
-  final bool useLightTheme;
-}
-```
-
-## 8. UX- und Designregeln
-
-- Gruppen nach ihrer Wirkung benennen: Darstellung, Lesbarkeit, Farben, Verhalten und Daten.
-- Jede Option zeigt ihren aktuellen Wert unmittelbar.
-- Farbauswahl kombiniert Farbswatch und Namen; Farbe allein reicht nicht.
-- Slider zeigen Wert, Einheit, Minimum und Maximum.
-- Globale visuelle Aenderungen werden in einer Vorschau sichtbar.
-- Speichern ist eindeutig; Verwerfen wird bei Aenderungen bestaetigt.
-- Destruktive oder datenbezogene Aktionen gehoeren in einen getrennten Bereich.
-- Moduleigene Optionen bleiben im jeweiligen Fachmodul.
-- Einstellungen werden beim Laden und Speichern validiert.
-- Bei wachsendem Umfang sind Tabs oder Unterseiten besser als eine endlose Liste.
-
-## 9. Accessibility und Qualitaet
-
-- Alle Controls erhalten sichtbare Labels.
-- Icon-only-Aktionen bekommen Tooltips und Semantics.
-- Die Settings-Seite muss mit Tastatur und Screenreader bedienbar sein.
-- Schriftvergroesserung darf keine abgeschnittenen oder ueberlappenden Controls erzeugen.
-- Theme- und Farbkombinationen werden in hell und dunkel auf Kontrast geprueft.
-- Ungueltige oder veraltete gespeicherte Werte fallen kontrolliert auf Defaults zurueck.
-
-## 10. Checkliste fuer neue Apps
-
-- [ ] Settings-Modell immutable und typisiert.
-- [ ] Defaults an einer zentralen Stelle.
-- [ ] Controller und Repository getrennt.
-- [ ] Persistenzformat dokumentiert.
-- [ ] Migrationen fuer geaenderte Defaults oder Schluessel vorhanden.
-- [ ] Erlaubte Werte und Wertebereiche validiert.
-- [ ] Lokale Bearbeitung mit Speichern/Verwerfen umgesetzt.
-- [ ] Vorschau fuer visuelle Einstellungen vorhanden.
-- [ ] Globale Laufzeitwirkung am App-Root gebuendelt.
-- [ ] Accessibility, Kontrast und grosse Schrift getestet.
-- [ ] Fachliche Modul-Settings von globalen UI-Settings getrennt.
-
-## 11. Aktueller Abgleich
-
-**Umgesetzt:** typisiertes Modell, zentrale Defaults, Controller, Repository, Sembast-Persistenz, Migrationen, lokale Aenderungsbearbeitung, Vorschau, Theme-/Font-/Farbsteuerung und globale Textskalierung.
-
-**Offen beziehungsweise weiter pruefbar:** vollstaendige Tastatur- und Screenreader-Pruefung, Kontrastpruefung aller Farbkombinationen sowie eine adaptive Aufteilung der Settings-Seite bei kuenftig wachsendem Umfang.
+- Tastatur- und Screenreader-Bedienung der gesamten Settings-Seite.
+- Kontrastpruefung aller Farbpaare in Dark und Light.
+- Tests fuer defekte JSON-Dateien, fehlende Werte und Legacy-Migration.
+- Pruefung, dass grosse Textskalierung keine abgeschnittenen Controls erzeugt.
