@@ -32,7 +32,7 @@ class HomePage extends StatelessWidget {
                 bottom: 4,
               ),
               child: SvgPicture.asset(
-                'assets/icons/color_transparent_icon.svg',
+                'assets/icons/white_transparent_icon.svg',
                 width: 75,
                 height: 75,
                 colorFilter: ColorFilter.mode(
