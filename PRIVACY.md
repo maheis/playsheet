@@ -1,61 +1,59 @@
-# Datenschutzerklärung für Volley Ace
+# Datenschutzerklärung für PlaySheet
 
-Stand: 14.08.2026
+Stand: 25.09.2026
 
 ## 1. Verantwortlicher
 
-Verantwortlich für die Verarbeitung personenbezogener Daten im Zusammenhang mit Volley Ace ist:
+Verantwortlich für die Verarbeitung personenbezogener Daten im Zusammenhang mit PlaySheet ist:
 
 - Name/Handle: maheis
 - Kontakt: [maheis](mailto:maheis@heister.be)
 
 ## 2. Über die App
 
-Volley Ace ist eine Volleyball-App für die Punktetafel und die Erfassung von Punktewertungen und Spielstatistiken. Die App ist für die lokale Nutzung ausgelegt.
+PlaySheet ist ein digitaler Spielblock für Spielrunden, Punkte, Spieler und Auswertungen. Die App ist für die lokale Nutzung ausgelegt.
 
 ## 3. Welche Daten verarbeitet werden
 
 Die App kann folgende Daten speichern, wenn du sie eingibst:
 
-- Spielinformationen wie Spielort, Gegnerteam, Spieltag, Uhrzeit und Spieltyp
-- Spielerinformationen wie Name und Trikotnummer
-- Punkte, Fehler, Wertungsarten sowie Spiel- und Satzstände
-- Einstellungen der App, zum Beispiel die ausgewählte Schriftart
-- Daten der Punktetafel einschließlich Spielstand, Uhrzeit und Stoppuhr
+- Spieler- oder Gruppennamen
+- Spielarten, Spielrunden, Punktestände und Ergebnisse
+- Datums- und Zeitinformationen zu Spielrunden
+- Statistiken und Auswertungen
+- lokale Einstellungen wie Schriftart, Designmodus, Farben und Textgröße
 
-Die Eingaben können Namen und damit personenbezogene Daten enthalten. Du entscheidest selbst, welche Daten du in der App speicherst.
+Die Eingaben können personenbezogene Daten enthalten, wenn du echte Namen oder andere identifizierende Angaben verwendest. Du entscheidest selbst, welche Daten du in der App speicherst.
 
 ## 4. Speicherung auf deinem Gerät
 
-Die genannten Daten werden ausschließlich lokal auf deinem Gerät gespeichert. Auf Android und Desktop verwendet Volley Ace dafür eine lokale Datenbank. Im Web werden die Daten im lokalen Browserspeicher abgelegt.
+Die Daten werden lokal auf deinem Gerät gespeichert. PlaySheet verwendet dafür lokale Speicherung beziehungsweise eine lokale Datenbank.
 
 Die App übermittelt diese Daten derzeit nicht automatisch an einen Server. Es gibt keine Cloud-Synchronisierung.
 
 ## 5. Zweck und Rechtsgrundlage
 
-Die Daten werden ausschließlich verarbeitet, um die Funktionen von Volley Ace bereitzustellen, insbesondere die Punktetafel, die Punktewertung und die Spielstatistik.
+Die Daten werden ausschließlich verarbeitet, um Spielrunden, Punktestände, Spielerlisten und Auswertungen in der App bereitzustellen.
 
-Die Verarbeitung erfolgt zur Erfüllung der von dir gewünschten App-Funktionen. Soweit du Daten freiwillig eingibst, ist diese Eingabe deine Entscheidung.
+Die Verarbeitung erfolgt zur Erfüllung der App-Funktionen und aufgrund deiner freiwilligen Eingaben.
 
 ## 6. Weitergabe an Dritte
 
-Volley Ace gibt gespeicherte Daten nicht automatisch an Dritte weiter. In der App sind derzeit keine Analyse-, Werbe-, Tracking- oder Crash-Reporting-Dienste integriert.
+PlaySheet gibt gespeicherte Daten nicht automatisch an Dritte weiter. Es sind keine Analyse-, Werbe-, Tracking- oder Crash-Reporting-Dienste integriert.
 
 Wenn du Daten selbst exportierst, kopierst oder über eine andere App teilst, gelten zusätzlich die Datenschutzbestimmungen des jeweiligen Zielortes oder Dienstes.
 
 ## 7. Berechtigungen und technische Dienste
 
-Die App benötigt für ihre Kernfunktionen keine Benutzerkonten und keine Cloud-Dienste. Die Funktion, den Bildschirm während der Nutzung der Punktetafel aktiv zu halten, verwendet eine technische Gerätefunktion und übermittelt dabei keine personenbezogenen Daten.
+Die App benötigt für ihre Kernfunktionen keine Benutzerkonten und keine Cloud-Dienste. Lokale Export- oder Importfunktionen greifen nur auf von dir gewählte Dateien oder Speicherorte zu.
 
 ## 8. Speicherdauer und Löschung
 
-Die Daten bleiben auf deinem Gerät gespeichert, bis du sie in der App löschst, die App-Daten entfernst oder die App deinstallierst. Einzelne gespeicherte Spiele können über die Löschfunktion der App entfernt werden.
-
-Bei der Nutzung der Web-Version können gespeicherte Daten über die Daten- bzw. Website-Einstellungen des Browsers gelöscht werden.
+Die Daten bleiben auf deinem Gerät gespeichert, bis du sie in der App löschst, App-Daten entfernst oder die App deinstallierst. Exportdateien musst du gegebenenfalls separat löschen.
 
 ## 9. Datensicherheit
 
-Die Daten werden lokal gespeichert und nicht automatisch übertragen. Schütze dein Gerät durch eine Bildschirmsperre und halte regelmäßig Sicherungen bereit, wenn die gespeicherten Spiel- und Statistikdaten wichtig sind. Eine zusätzliche Verschlüsselung innerhalb der App wird derzeit nicht angeboten.
+Die Daten werden lokal gespeichert und nicht automatisch übertragen. Schütze dein Gerät mit einer Bildschirmsperre und sichere wichtige Spielstände bei Bedarf lokal.
 
 ## 10. Deine Rechte
 
