@@ -23,6 +23,14 @@ class AppSettings {
     highlightColorValue: 0xFFFFB74D,
   );
 
+  static const availableFonts = <String>[
+    'OpenDyslexic',
+    'NotoSans',
+    'CourierPrime',
+    'Ubuntu',
+    'Ubuntu Mono',
+  ];
+
   static const availableColors = <Color>[
     Color(0xFFE57373),
     Color(0xFFFFB74D),

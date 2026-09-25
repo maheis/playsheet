@@ -4335,13 +4335,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 labelText: 'Schriftart',
                 border: OutlineInputBorder(),
               ),
-              items: [
-                'Ubuntu',
-                'OpenDyslexic',
-                'NotoSans',
-                'CourierPrime',
-                'Ubuntu Mono',
-              ]
+              items: AppSettings.availableFonts
                   .map(
                     (font) => DropdownMenuItem(value: font, child: Text(font)),
                   )

@@ -2,7 +2,7 @@
 
 ## Status
 
-Bereits vorhanden; entspricht dem gemeinsamen Standard weitgehend.
+Umgesetzt; entspricht dem gemeinsamen Standard.
 
 ## Gemeinsamer Standard
 
@@ -32,6 +32,6 @@ PlaySheet nutzt bereits:
 - `highlightColorValue`
 - dieselbe Farbpalette: Rot, Orange, Grün, Gelb, Blau, Mint, Lila
 
-## Nächster Feinschliff
+## Abgleich 2026-09-25
 
-Die verfügbare Schriftliste sollte explizit an den gemeinsamen Standard angeglichen werden, falls die UI-Seite nicht alle Fonts anbietet.
+Die Font-Auswahl ist im Settings-Modell zentralisiert und wird von der Settings-Seite verwendet. Damit entspricht PlaySheet dem gemeinsamen UI-X-Standard.
