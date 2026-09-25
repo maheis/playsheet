@@ -4330,7 +4330,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              value: draft.fontFamily,
+              initialValue: draft.fontFamily,
               decoration: const InputDecoration(
                 labelText: 'Schriftart',
                 border: OutlineInputBorder(),
