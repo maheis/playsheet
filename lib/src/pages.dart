@@ -987,6 +987,7 @@ class _SubroundTableState extends State<_SubroundTable> {
   final roundControllers = <String, TextEditingController>{};
   final calculatorFocusNodes = <String, FocusNode>{};
   final calculatorOpeners = <String, VoidCallback>{};
+  final calculatorTargets = <String, _CalculatorTarget Function()>{};
   final verticalScrollController = ScrollController();
   final horizontalScrollController = ScrollController();
   final diceControllers = <String, TextEditingController>{};
@@ -1031,7 +1032,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     }
   }
 
-  Future<void> _selectDealer() async {
+  Future<void> _selectDealer({bool manual = false}) async {
     if (selectingDealer || !mounted) return;
     selectingDealer = true;
     final previousRounds = widget.controller.gameRounds
@@ -1041,9 +1042,17 @@ class _SubroundTableState extends State<_SubroundTable> {
             round.dealerPlayerId != null)
         .toList()
       ..sort((first, second) => first.createdAt.compareTo(second.createdAt));
-    final currentDealerId = previousRounds.isEmpty
-        ? null
-        : _dealerAtEndOfRound(previousRounds.last);
+    final currentRoundGames = widget.controller.games
+        .where((game) => game.roundId == widget.round.id)
+        .toList();
+    final currentDealerId =
+        manual && _currentRound.dealerOverridePlayerId != null
+            ? _currentRound.dealerOverridePlayerId
+            : manual && currentRoundGames.isNotEmpty
+                ? _dealerForDraft(currentRoundGames)
+                : previousRounds.isEmpty
+                    ? null
+                    : _dealerAtEndOfRound(previousRounds.last);
     final currentDealerIndex = currentDealerId == null
         ? -1
         : widget.round.playerIds.indexOf(currentDealerId);
@@ -1056,7 +1065,8 @@ class _SubroundTableState extends State<_SubroundTable> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
-        var selectedDealerId = suggestedDealerId ??
+        var selectedDealerId = (manual ? currentDealerId : null) ??
+            suggestedDealerId ??
             (widget.round.playerIds.isEmpty
                 ? null
                 : widget.round.playerIds.first);
@@ -1131,6 +1141,13 @@ class _SubroundTableState extends State<_SubroundTable> {
       widget.round.id,
       dealerSelection.dealerId ?? '',
     );
+    await widget.controller.updateGameRoundDealerOverride(
+      widget.round.id,
+      manual && dealerSelection.dealerId?.isNotEmpty == true
+          ? dealerSelection.dealerId
+          : null,
+    );
+    dealerAfterDraft = manual ? dealerSelection.dealerId : null;
     await widget.controller.updateGameRoundDealerAdvance(
       widget.round.id,
       dealerSelection.advance,
@@ -1213,6 +1230,9 @@ class _SubroundTableState extends State<_SubroundTable> {
       .dealerPlayerId;
 
   String? _dealerAtEndOfRound(GameRound round) {
+    if (round.dealerOverridePlayerId != null) {
+      return round.dealerOverridePlayerId;
+    }
     final initialDealerId = round.dealerPlayerId;
     if (!round.dealerAdvancesOnScore || initialDealerId == null) {
       return initialDealerId;
@@ -1223,6 +1243,10 @@ class _SubroundTableState extends State<_SubroundTable> {
         .toList()
       ..sort((first, second) => first.playedAt.compareTo(second.playedAt));
     for (final game in games) {
+      if (game.scores.isEmpty) {
+        dealerId = _nextPlayerId(dealerId);
+        continue;
+      }
       for (var index = 0; index < round.playerIds.length; index++) {
         if (!game.scores.containsKey(dealerId)) break;
         dealerId = _nextPlayerId(dealerId);
@@ -1245,6 +1269,10 @@ class _SubroundTableState extends State<_SubroundTable> {
       var dealerId = firstDealer;
       for (final round in chronologicalRounds) {
         if (round == game) break;
+        if (round.scores.isEmpty) {
+          dealerId = _nextPlayerId(dealerId);
+          continue;
+        }
         if (round.scores.containsKey(dealerId)) {
           dealerId = _nextPlayerId(dealerId);
         }
@@ -1261,12 +1289,26 @@ class _SubroundTableState extends State<_SubroundTable> {
   String? _dealerForDraft(List<GameRecord> rounds) {
     final firstDealer = _firstDealer;
     if (firstDealer == null || widget.round.playerIds.isEmpty) return null;
+    final overrideDealer = _currentRound.dealerOverridePlayerId;
+    if (overrideDealer != null) {
+      var dealerId = overrideDealer;
+      for (final playerId in committedDraftPlayerIds) {
+        if (playerId == dealerId) {
+          dealerId = _nextPlayerId(dealerId);
+        }
+      }
+      return dealerId;
+    }
     if (_currentRound.dealerAdvancesOnScore) {
       final chronologicalRounds = [...rounds]
         ..sort((first, second) => first.playedAt.compareTo(second.playedAt));
       var dealerId = dealerAfterDraft ?? firstDealer;
       if (dealerAfterDraft == null) {
         for (final round in chronologicalRounds) {
+          if (round.scores.isEmpty) {
+            dealerId = _nextPlayerId(dealerId);
+            continue;
+          }
           for (var index = 0; index < widget.round.playerIds.length; index++) {
             if (!round.scores.containsKey(dealerId)) break;
             dealerId = _nextPlayerId(dealerId);
@@ -1794,11 +1836,13 @@ class _SubroundTableState extends State<_SubroundTable> {
                                                   category,
                                                   playerId,
                                                 ),
-                                                onNextEmpty: () =>
-                                                    _recordDiceScore(
-                                                  category,
-                                                  playerId,
-                                                ),
+                                                onNextEmpty: (_) {
+                                                  _recordDiceScore(
+                                                    category,
+                                                    playerId,
+                                                  );
+                                                  return null;
+                                                },
                                               ),
                               ),
                             );
@@ -2274,45 +2318,49 @@ class _SubroundTableState extends State<_SubroundTable> {
         ? (primary.computeLuminance() > .5 ? Colors.black : Colors.white)
         : Color(player!.secondaryColorValue!);
     final isDealer = id == dealerId;
-    return SizedBox(
-      width: 72,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(2),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: isDealer
-                  ? Border.all(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 3,
-                    )
-                  : null,
-            ),
-            child: CircleAvatar(
-              radius: 18,
-              backgroundColor: primary,
-              child: Text(
-                name.characters.first.toUpperCase(),
-                style: TextStyle(
-                  color: secondary,
-                  fontWeight: FontWeight.bold,
+    return GestureDetector(
+      onLongPress:
+          widget.round.completed ? null : () => _selectDealer(manual: true),
+      child: SizedBox(
+        width: 72,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: isDealer
+                    ? Border.all(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 3,
+                      )
+                    : null,
+              ),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: primary,
+                child: Text(
+                  name.characters.first.toUpperCase(),
+                  style: TextStyle(
+                    color: secondary,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  fontSize: 9,
-                ),
-          ),
-        ],
+            const SizedBox(height: 2),
+            Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontSize: 9,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -2503,7 +2551,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                   () => committedDraftPlayerIds.add(id),
                 ),
                 onComplete: () => _recordRoundAndFocusFirst(roundNumber),
-                onNextEmpty: () => _focusNextField(id),
+                onNextEmpty: (_) => _focusNextField(id),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 8),
             ),
@@ -2606,13 +2654,18 @@ class _SubroundTableState extends State<_SubroundTable> {
     VoidCallback? onDismiss,
     VoidCallback? onCommit,
     VoidCallback? onComplete,
-    VoidCallback? onNextEmpty,
+    _CalculatorTarget? Function(String value)? onNextEmpty,
   }) {
     final controller = controllers.putIfAbsent(
       key,
       () => TextEditingController(text: value == null ? '' : '$value'),
     );
     final focusNode = calculatorFocusNodes.putIfAbsent(key, FocusNode.new);
+    calculatorTargets[key] = () => _CalculatorTarget(
+          controller: controller,
+          onChanged: onChanged,
+          onCommit: onCommit,
+        );
     return _CalculatorField(
       controller: controller,
       focusNode: focusNode,
@@ -2630,14 +2683,12 @@ class _SubroundTableState extends State<_SubroundTable> {
     );
   }
 
-  void _focusNextField(String currentId) {
+  _CalculatorTarget? _focusNextField(String currentId) {
     final currentIndex = widget.round.playerIds.indexOf(currentId);
     final nextIndex = (currentIndex + 1) % widget.round.playerIds.length;
     final nextId = widget.round.playerIds[nextIndex];
     FocusScope.of(context).requestFocus(calculatorFocusNodes[nextId]);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) calculatorOpeners[nextId]?.call();
-    });
+    return calculatorTargets[nextId]?.call();
   }
 
   Future<void> _recordRoundAndFocusFirst(int roundNumber) async {
@@ -2662,6 +2713,7 @@ class _SubroundTableState extends State<_SubroundTable> {
     final rounds = widget.controller.games
         .where((game) => game.roundId == widget.round.id)
         .toList();
+    final dealerBeforeRound = _dealerForDraft(rounds);
     final scores = <String, int>{};
     for (final id in widget.round.playerIds) {
       final text = draftControllers[id]?.text.trim() ?? '';
@@ -2674,8 +2726,17 @@ class _SubroundTableState extends State<_SubroundTable> {
       }
       if (score != null) scores[id] = score;
     }
-    if (_currentRound.dealerAdvancesOnScore) {
-      dealerAfterDraft = _dealerForDraft(rounds);
+    var dealerAfterRound = dealerBeforeRound;
+    if (_currentRound.dealerAdvancesOnScore && dealerAfterRound != null) {
+      if (scores.isEmpty) {
+        dealerAfterRound = _nextPlayerId(dealerAfterRound);
+      } else {
+        for (var index = 0; index < widget.round.playerIds.length; index++) {
+          final dealerId = dealerAfterRound;
+          if (dealerId == null || !scores.containsKey(dealerId)) break;
+          dealerAfterRound = _nextPlayerId(dealerId);
+        }
+      }
     }
     await widget.controller.addGame(
       GameRecord(
@@ -2688,6 +2749,13 @@ class _SubroundTableState extends State<_SubroundTable> {
         playedAt: DateTime.now(),
       ),
     );
+    if (_currentRound.dealerAdvancesOnScore) {
+      dealerAfterDraft = dealerAfterRound;
+      await widget.controller.updateGameRoundDealerOverride(
+        widget.round.id,
+        dealerAfterRound,
+      );
+    }
     for (final controller in draftControllers.values) {
       controller.clear();
     }
@@ -2798,7 +2866,7 @@ class _SubroundTableState extends State<_SubroundTable> {
                         throughMarchPlayer == null,
                     onChanged: (_) => setState(() {}),
                     onComplete: () => _recordDamjagenRound(roundNumber),
-                    onNextEmpty: () => _focusNextField(id),
+                    onNextEmpty: (_) => _focusNextField(id),
                   ),
                 ],
               ),
@@ -3414,6 +3482,18 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
   }
 }
 
+class _CalculatorTarget {
+  const _CalculatorTarget({
+    required this.controller,
+    this.onChanged,
+    this.onCommit,
+  });
+
+  final TextEditingController controller;
+  final ValueChanged<String>? onChanged;
+  final VoidCallback? onCommit;
+}
+
 class _CalculatorField extends StatefulWidget {
   const _CalculatorField({
     required this.controller,
@@ -3439,7 +3519,7 @@ class _CalculatorField extends StatefulWidget {
   final VoidCallback? onDismiss;
   final VoidCallback? onCommit;
   final VoidCallback? onComplete;
-  final VoidCallback? onNextEmpty;
+  final _CalculatorTarget? Function(String value)? onNextEmpty;
   final bool allowNegative;
   final bool enabled;
 
@@ -3464,10 +3544,12 @@ class _CalculatorFieldState extends State<_CalculatorField> {
 
   Future<void> _openCalculator() async {
     if (mounted) setState(() => calculatorOpen = true);
+    var activeController = widget.controller;
+    ValueChanged<String>? activeOnChanged = widget.onChanged;
+    VoidCallback? activeOnCommit = widget.onCommit;
     var expression = widget.controller.text;
     var expressionChanged = false;
     var completeAfterClose = false;
-    var nextEmptyAfterClose = false;
     final mediaQuery = MediaQuery.of(context);
     final availableHeight = math.max(0.0, mediaQuery.size.height - 200.0);
     final availableWidth = mediaQuery.size.width;
@@ -3515,19 +3597,34 @@ class _CalculatorFieldState extends State<_CalculatorField> {
             expressionChanged = true;
             final result = _calculateExpression(value);
             if (value.isEmpty) {
-              widget.controller.clear();
-              widget.onChanged?.call('');
+              activeController.clear();
+              activeOnChanged?.call('');
             } else if (result != null) {
               final text = _formatCalculatorValue(result);
-              widget.controller.value = TextEditingValue(
+              activeController.value = TextEditingValue(
                 text: text,
                 selection: TextSelection.collapsed(offset: text.length),
               );
-              widget.onChanged?.call(text);
+              activeOnChanged?.call(text);
             }
           },
+          onNextEmpty: (value) {
+            activeController.value = TextEditingValue(
+              text: value,
+              selection: TextSelection.collapsed(offset: value.length),
+            );
+            activeOnChanged?.call(value);
+            activeOnCommit?.call();
+            final target = widget.onNextEmpty?.call(value);
+            if (target != null) {
+              activeController = target.controller;
+              activeOnChanged = target.onChanged;
+              activeOnCommit = target.onCommit;
+              expression = target.controller.text;
+            }
+            return target;
+          },
           onComplete: () => completeAfterClose = true,
-          onNextEmpty: () => nextEmptyAfterClose = true,
         ),
       ),
     );
@@ -3538,14 +3635,13 @@ class _CalculatorFieldState extends State<_CalculatorField> {
       }
       return;
     }
-    widget.controller.value = TextEditingValue(
+    activeController.value = TextEditingValue(
       text: result,
       selection: TextSelection.collapsed(offset: result.length),
     );
-    widget.onChanged?.call(result);
-    if (expressionChanged) widget.onCommit?.call();
+    activeOnChanged?.call(result);
+    if (expressionChanged) activeOnCommit?.call();
     if (completeAfterClose) widget.onComplete?.call();
-    if (nextEmptyAfterClose) widget.onNextEmpty?.call();
   }
 
   @override
@@ -3585,7 +3681,7 @@ class _CalculatorPad extends StatefulWidget {
   final bool emptyAsZero;
   final Color? highlightColor;
   final VoidCallback? onComplete;
-  final VoidCallback? onNextEmpty;
+  final _CalculatorTarget? Function(String value)? onNextEmpty;
 
   @override
   State<_CalculatorPad> createState() => _CalculatorPadState();
@@ -3624,10 +3720,17 @@ class _CalculatorPadState extends State<_CalculatorPad> {
     final result = _calculateExpression(expression);
     if (result == null && !(complete && widget.emptyAsZero)) return;
     if (complete) widget.onComplete?.call();
-    if (nextEmpty) widget.onNextEmpty?.call();
+    final text = result == null ? '0' : _formatCalculatorValue(result);
+    if (nextEmpty) {
+      final target = widget.onNextEmpty?.call(text);
+      if (target != null) {
+        setState(() => expression = target.controller.text);
+        return;
+      }
+    }
     Navigator.pop(
       context,
-      result == null ? '0' : _formatCalculatorValue(result),
+      text,
     );
   }
 

@@ -192,6 +192,7 @@ class AppController extends ChangeNotifier {
                   createdAt: round.createdAt,
                   maxPoints: round.maxPoints,
                   dealerPlayerId: round.dealerPlayerId,
+                  dealerOverridePlayerId: round.dealerOverridePlayerId,
                   dealerAdvancesOnScore: round.dealerAdvancesOnScore,
                   completed: false,
                 )
@@ -222,6 +223,7 @@ class AppController extends ChangeNotifier {
             createdAt: round.createdAt,
             maxPoints: round.maxPoints,
             dealerPlayerId: dealerPlayerId,
+            dealerOverridePlayerId: round.dealerOverridePlayerId,
             dealerAdvancesOnScore: round.dealerAdvancesOnScore,
             completed: round.completed,
             winnerPlayerIds: round.winnerPlayerIds,
@@ -245,6 +247,7 @@ class AppController extends ChangeNotifier {
             createdAt: round.createdAt,
             maxPoints: round.maxPoints,
             dealerPlayerId: round.dealerPlayerId,
+            dealerOverridePlayerId: round.dealerOverridePlayerId,
             dealerAdvancesOnScore: enabled,
             completed: round.completed,
             winnerPlayerIds: round.winnerPlayerIds,
@@ -277,6 +280,33 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateGameRoundDealerOverride(
+    String id,
+    String? dealerPlayerId,
+  ) async {
+    gameRounds = [
+      for (final round in gameRounds)
+        if (round.id == id)
+          GameRound(
+            id: round.id,
+            sessionId: round.sessionId,
+            gameBlockId: round.gameBlockId,
+            playerIds: round.playerIds,
+            createdAt: round.createdAt,
+            maxPoints: round.maxPoints,
+            dealerPlayerId: round.dealerPlayerId,
+            dealerOverridePlayerId: dealerPlayerId,
+            dealerAdvancesOnScore: round.dealerAdvancesOnScore,
+            completed: round.completed,
+            winnerPlayerIds: round.winnerPlayerIds,
+          )
+        else
+          round,
+    ];
+    await _repository.saveGameRounds(gameRounds);
+    notifyListeners();
+  }
+
   Future<void> updateGameRoundPlayerOrder(
     String id,
     List<String> playerIds,
@@ -292,6 +322,7 @@ class AppController extends ChangeNotifier {
             createdAt: round.createdAt,
             maxPoints: round.maxPoints,
             dealerPlayerId: round.dealerPlayerId,
+            dealerOverridePlayerId: round.dealerOverridePlayerId,
             completed: round.completed,
             winnerPlayerIds: round.winnerPlayerIds,
           )
@@ -314,6 +345,7 @@ class AppController extends ChangeNotifier {
             createdAt: round.createdAt,
             maxPoints: maxPoints,
             dealerPlayerId: round.dealerPlayerId,
+            dealerOverridePlayerId: round.dealerOverridePlayerId,
             dealerAdvancesOnScore: round.dealerAdvancesOnScore,
             completed: round.completed,
             winnerPlayerIds: round.winnerPlayerIds,
@@ -360,6 +392,7 @@ class AppController extends ChangeNotifier {
         createdAt: round.createdAt,
         maxPoints: round.maxPoints,
         dealerPlayerId: round.dealerPlayerId,
+        dealerOverridePlayerId: round.dealerOverridePlayerId,
         dealerAdvancesOnScore: round.dealerAdvancesOnScore,
         completed: true,
         winnerPlayerIds: winnerPlayerIds,

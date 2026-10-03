@@ -81,6 +81,7 @@ class LocalAppRepository implements AppRepository {
         'createdAt': round.createdAt.toIso8601String(),
         'maxPoints': round.maxPoints,
         'dealerPlayerId': round.dealerPlayerId,
+        'dealerOverridePlayerId': round.dealerOverridePlayerId,
         'dealerAdvancesOnScore': round.dealerAdvancesOnScore,
         'completed': round.completed,
         'winnerPlayerIds': round.winnerPlayerIds,
@@ -94,6 +95,7 @@ class LocalAppRepository implements AppRepository {
         createdAt: DateTime.parse(data['createdAt'] as String),
         maxPoints: (data['maxPoints'] as num?)?.toInt() ?? 16,
         dealerPlayerId: data['dealerPlayerId'] as String?,
+        dealerOverridePlayerId: data['dealerOverridePlayerId'] as String?,
         dealerAdvancesOnScore: data['dealerAdvancesOnScore'] as bool? ?? false,
         completed: data['completed'] as bool? ?? false,
         winnerPlayerIds: List<String>.from(

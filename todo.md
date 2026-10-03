@@ -29,4 +29,6 @@
 - [x] Zoom-Button links vom Summenzeichen
 - [ ] Settings-Page angleichen mit VolleyAce (Vorschau und Speicherbutton in VolleyAce entfernen!)
 - [ ] Statistik nach Spiel filtern
-- [ ] Geber weiterschieben, wenn nichts drin steht
+- [x] Geber weiterschieben, auch wenn nichts drin steht
+- [x] feldwechsel soll direkt passieren und der rechner nicht ein- und wieder ausgeklappt werden
+- [x] nächster spieleer händisch korrigierbar (lange auf den Spielernamen drücken?)
