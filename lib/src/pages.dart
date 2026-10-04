@@ -3716,17 +3716,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
             activeOnCommit?.call();
             final target = activeOnNextEmpty?.call(value);
             if (target != null) {
-              activeController = target.controller;
-              activeHighlightColor = target.highlightColor;
-              activeOnChanged = target.onChanged;
-              activeOnCommit = target.onCommit;
-              activeOnDismiss = target.onDismiss;
-              expression = target.controller.text;
-              expressionChanged = false;
-              _CalculatorPadState.updateHighlightColor(
-                context,
-                activeHighlightColor,
-              );
+              switchTo(target);
             }
             return target;
           },
@@ -3815,11 +3805,6 @@ class _CalculatorPadState extends State<_CalculatorPad> {
       expression = nextExpression;
       activeHighlightColor = nextHighlightColor;
     });
-  }
-
-  static void updateHighlightColor(BuildContext context, Color? color) {
-    final state = context.findAncestorStateOfType<_CalculatorPadState>();
-    state?.setState(() => state.activeHighlightColor = color);
   }
 
   void _press(String value) {
