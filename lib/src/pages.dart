@@ -3236,7 +3236,7 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
           children: [
             TextField(
               controller: name,
-              autofocus: true,
+              autofocus: !isEditing,
               onChanged: (_) {
                 setState(() {});
                 _saveChanges();
