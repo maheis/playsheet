@@ -3583,23 +3583,9 @@ class _CalculatorFieldState extends State<_CalculatorField> {
     );
     if (activeField != null && activeField != this) {
       switchActiveField?.call(directTarget);
-      await Scrollable.ensureVisible(
-        context,
-        alignment: .12,
-        duration: const Duration(milliseconds: 180),
-        curve: Curves.easeOut,
-      );
-      if (!mounted) return;
       return;
     }
     activeField = this;
-    await Scrollable.ensureVisible(
-      context,
-      alignment: .12,
-      duration: const Duration(milliseconds: 180),
-      curve: Curves.easeOut,
-    );
-    if (!mounted) return;
     if (mounted) setState(() => calculatorOpen = true);
     var activeController = widget.controller;
     var activeHighlightColor = widget.highlightColor;
@@ -3626,7 +3612,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
     const gridHorizontalPadding = 10.0;
     final maximumCalculatorHeight = math.min(
       availableHeight,
-      mediaQuery.size.height * .55,
+      mediaQuery.size.height * .55 + 25,
     );
     final maxButtonSize = math.max(
       0,
