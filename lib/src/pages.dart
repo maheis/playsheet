@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -2663,8 +2664,13 @@ class _SubroundTableState extends State<_SubroundTable> {
     final focusNode = calculatorFocusNodes.putIfAbsent(key, FocusNode.new);
     calculatorTargets[key] = () => _CalculatorTarget(
           controller: controller,
+          focusNode: focusNode,
+          highlightColor: highlightColor,
           onChanged: onChanged,
+          onDismiss: onDismiss,
           onCommit: onCommit,
+          onComplete: onComplete,
+          onNextEmpty: onNextEmpty,
         );
     return _CalculatorField(
       controller: controller,
@@ -3485,13 +3491,23 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
 class _CalculatorTarget {
   const _CalculatorTarget({
     required this.controller,
+    this.focusNode,
+    this.highlightColor,
     this.onChanged,
     this.onCommit,
+    this.onDismiss,
+    this.onComplete,
+    this.onNextEmpty,
   });
 
   final TextEditingController controller;
+  final FocusNode? focusNode;
+  final Color? highlightColor;
   final ValueChanged<String>? onChanged;
   final VoidCallback? onCommit;
+  final VoidCallback? onDismiss;
+  final VoidCallback? onComplete;
+  final _CalculatorTarget? Function(String value)? onNextEmpty;
 }
 
 class _CalculatorField extends StatefulWidget {
@@ -3528,6 +3544,8 @@ class _CalculatorField extends StatefulWidget {
 }
 
 class _CalculatorFieldState extends State<_CalculatorField> {
+  static _CalculatorFieldState? activeField;
+  static void Function(_CalculatorTarget target)? switchActiveField;
   bool calculatorOpen = false;
 
   @override
@@ -3543,15 +3561,41 @@ class _CalculatorFieldState extends State<_CalculatorField> {
   }
 
   Future<void> _openCalculator() async {
+    final directTarget = _CalculatorTarget(
+      controller: widget.controller,
+      focusNode: widget.focusNode,
+      highlightColor: widget.highlightColor,
+      onChanged: widget.onChanged,
+      onCommit: widget.onCommit,
+      onDismiss: widget.onDismiss,
+      onComplete: widget.onComplete,
+      onNextEmpty: widget.onNextEmpty,
+    );
+    if (activeField != null && activeField != this) {
+      switchActiveField?.call(directTarget);
+      return;
+    }
+    activeField = this;
     if (mounted) setState(() => calculatorOpen = true);
     var activeController = widget.controller;
+    var activeHighlightColor = widget.highlightColor;
     ValueChanged<String>? activeOnChanged = widget.onChanged;
     VoidCallback? activeOnCommit = widget.onCommit;
+    VoidCallback? activeOnDismiss = widget.onDismiss;
+    VoidCallback? activeOnComplete = widget.onComplete;
+    var activeOnNextEmpty = widget.onNextEmpty;
     var expression = widget.controller.text;
     var expressionChanged = false;
     var completeAfterClose = false;
     final mediaQuery = MediaQuery.of(context);
-    final availableHeight = math.max(0.0, mediaQuery.size.height - 200.0);
+    const reservedTableRows = 2 * 48.0;
+    final availableHeight = math.max(
+      0.0,
+      mediaQuery.size.height -
+          mediaQuery.padding.top -
+          kToolbarHeight -
+          reservedTableRows,
+    );
     final availableWidth = mediaQuery.size.width;
     const calculatorFixedHeight = 80.0;
     const gridVerticalSpacing = 8.0;
@@ -3576,22 +3620,39 @@ class _CalculatorFieldState extends State<_CalculatorField> {
           calculatorFixedHeight + buttonSize * 5 + gridVerticalSpacing,
         )
         .toDouble();
-    final result = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      barrierColor: Colors.transparent,
-      constraints: BoxConstraints(
-        maxWidth: availableWidth,
-        maxHeight: availableHeight,
-      ),
-      builder: (context) => SizedBox(
+    final padKey = GlobalKey<_CalculatorPadState>();
+    late void Function(_CalculatorTarget target) switchTo;
+    switchTo = (target) {
+      activeController = target.controller;
+      activeHighlightColor = target.highlightColor;
+      activeOnChanged = target.onChanged;
+      activeOnCommit = target.onCommit;
+      activeOnDismiss = target.onDismiss;
+      activeOnComplete = target.onComplete;
+      activeOnNextEmpty = target.onNextEmpty;
+      expression = target.controller.text;
+      expressionChanged = false;
+      target.focusNode?.requestFocus();
+      padKey.currentState?.switchTo(expression, activeHighlightColor);
+    };
+    switchActiveField = switchTo;
+    final resultCompleter = Completer<String?>();
+    late PersistentBottomSheetController sheetController;
+    void closeSheet(String value) {
+      if (!resultCompleter.isCompleted) resultCompleter.complete(value);
+      sheetController.close();
+    }
+
+    sheetController = Scaffold.of(context).showBottomSheet(
+      (context) => SizedBox(
         width: calculatorWidth,
         height: calculatorHeight,
         child: _CalculatorPad(
+          key: padKey,
           initialExpression: expression,
           allowNegative: widget.allowNegative,
           emptyAsZero: widget.emptyAsZero,
-          highlightColor: widget.highlightColor,
+          highlightColor: activeHighlightColor,
           onExpressionChanged: (value) {
             expression = value;
             expressionChanged = true;
@@ -3615,23 +3676,39 @@ class _CalculatorFieldState extends State<_CalculatorField> {
             );
             activeOnChanged?.call(value);
             activeOnCommit?.call();
-            final target = widget.onNextEmpty?.call(value);
+            final target = activeOnNextEmpty?.call(value);
             if (target != null) {
               activeController = target.controller;
+              activeHighlightColor = target.highlightColor;
               activeOnChanged = target.onChanged;
               activeOnCommit = target.onCommit;
+              activeOnDismiss = target.onDismiss;
               expression = target.controller.text;
+              expressionChanged = false;
+              _CalculatorPadState.updateHighlightColor(
+                context,
+                activeHighlightColor,
+              );
             }
             return target;
           },
           onComplete: () => completeAfterClose = true,
+          onClose: closeSheet,
         ),
       ),
     );
+    sheetController.closed.then((_) {
+      if (!resultCompleter.isCompleted) resultCompleter.complete(null);
+    });
+    final result = await resultCompleter.future;
+    if (activeField == this) {
+      activeField = null;
+      switchActiveField = null;
+    }
     if (mounted) setState(() => calculatorOpen = false);
     if (result == null) {
       if (expressionChanged && _calculateExpression(expression) != null) {
-        (widget.onDismiss ?? widget.onCommit)?.call();
+        (activeOnDismiss ?? activeOnCommit)?.call();
       }
       return;
     }
@@ -3641,7 +3718,7 @@ class _CalculatorFieldState extends State<_CalculatorField> {
     );
     activeOnChanged?.call(result);
     if (expressionChanged) activeOnCommit?.call();
-    if (completeAfterClose) widget.onComplete?.call();
+    if (completeAfterClose) activeOnComplete?.call();
   }
 
   @override
@@ -3666,12 +3743,14 @@ class _CalculatorFieldState extends State<_CalculatorField> {
 
 class _CalculatorPad extends StatefulWidget {
   const _CalculatorPad({
+    super.key,
     required this.initialExpression,
     required this.allowNegative,
     required this.onExpressionChanged,
     this.emptyAsZero = false,
     this.highlightColor,
     this.onComplete,
+    this.onClose,
     this.onNextEmpty,
   });
 
@@ -3681,6 +3760,7 @@ class _CalculatorPad extends StatefulWidget {
   final bool emptyAsZero;
   final Color? highlightColor;
   final VoidCallback? onComplete;
+  final ValueChanged<String>? onClose;
   final _CalculatorTarget? Function(String value)? onNextEmpty;
 
   @override
@@ -3689,6 +3769,19 @@ class _CalculatorPad extends StatefulWidget {
 
 class _CalculatorPadState extends State<_CalculatorPad> {
   late String expression = widget.initialExpression;
+  late Color? activeHighlightColor = widget.highlightColor;
+
+  void switchTo(String nextExpression, Color? nextHighlightColor) {
+    setState(() {
+      expression = nextExpression;
+      activeHighlightColor = nextHighlightColor;
+    });
+  }
+
+  static void updateHighlightColor(BuildContext context, Color? color) {
+    final state = context.findAncestorStateOfType<_CalculatorPadState>();
+    state?.setState(() => state.activeHighlightColor = color);
+  }
 
   void _press(String value) {
     if (value == '−' && !widget.allowNegative) {
@@ -3728,16 +3821,13 @@ class _CalculatorPadState extends State<_CalculatorPad> {
         return;
       }
     }
-    Navigator.pop(
-      context,
-      text,
-    );
+    widget.onClose?.call(text);
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final highlight = widget.highlightColor ??
+    final highlight = activeHighlightColor ??
         Theme.of(context).iconTheme.color ??
         colors.secondary;
     final highlightForeground =

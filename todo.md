@@ -32,3 +32,7 @@
 - [x] Geber weiterschieben, auch wenn nichts drin steht
 - [x] feldwechsel soll direkt passieren und der rechner nicht ein- und wieder ausgeklappt werden
 - [x] nächster spieleer händisch korrigierbar (lange auf den Spielernamen drücken?)
+- [x] Rechner-Farbe trotzdem ändern wenn der die eingabe uaf neuen spieler wechselt
+- [x] verkaspert sich manchmal beim setzen (weiß aber noch nicht wann)
+- [x] taschenrechner soll in der maximalhöhe so begrenzt werden, dass die ersten 2 spalten (eingabespalte + letztes gespeichertes) sichtbar bleibt
+- [x] feldwechel per direkt tipp in feld soll rechner nicht schließen
