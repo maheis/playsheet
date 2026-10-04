@@ -3546,12 +3546,22 @@ class _CalculatorField extends StatefulWidget {
 class _CalculatorFieldState extends State<_CalculatorField> {
   static _CalculatorFieldState? activeField;
   static void Function(_CalculatorTarget target)? switchActiveField;
+  static final fieldsByController =
+      <TextEditingController, _CalculatorFieldState>{};
   bool calculatorOpen = false;
 
   @override
   void initState() {
     super.initState();
+    fieldsByController[widget.controller] = this;
     widget.onOpenChanged?.call(_openCalculator);
+  }
+
+  @override
+  void dispose() {
+    fieldsByController.remove(widget.controller);
+    if (activeField == this) activeField = null;
+    super.dispose();
   }
 
   @override
@@ -3623,6 +3633,15 @@ class _CalculatorFieldState extends State<_CalculatorField> {
     final padKey = GlobalKey<_CalculatorPadState>();
     late void Function(_CalculatorTarget target) switchTo;
     switchTo = (target) {
+      final previousField = activeField;
+      final nextField = fieldsByController[target.controller];
+      if (previousField != null && previousField.mounted) {
+        previousField.setState(() => previousField.calculatorOpen = false);
+      }
+      if (nextField != null && nextField.mounted) {
+        nextField.setState(() => nextField.calculatorOpen = true);
+        activeField = nextField;
+      }
       activeController = target.controller;
       activeHighlightColor = target.highlightColor;
       activeOnChanged = target.onChanged;
@@ -3701,11 +3720,12 @@ class _CalculatorFieldState extends State<_CalculatorField> {
       if (!resultCompleter.isCompleted) resultCompleter.complete(null);
     });
     final result = await resultCompleter.future;
-    if (activeField == this) {
-      activeField = null;
-      switchActiveField = null;
+    final fieldToClose = activeField;
+    if (fieldToClose != null && fieldToClose.mounted) {
+      fieldToClose.setState(() => fieldToClose.calculatorOpen = false);
     }
-    if (mounted) setState(() => calculatorOpen = false);
+    activeField = null;
+    switchActiveField = null;
     if (result == null) {
       if (expressionChanged && _calculateExpression(expression) != null) {
         (activeOnDismiss ?? activeOnCommit)?.call();
