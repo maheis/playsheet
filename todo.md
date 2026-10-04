@@ -27,8 +27,6 @@
 - [x] Zoom-Seite drehen können
 - [x] Pinch to Zoom
 - [x] Zoom-Button links vom Summenzeichen
-- [ ] Settings-Page angleichen mit VolleyAce (Vorschau und Speicherbutton in VolleyAce entfernen!)
-- [ ] Statistik nach Spiel filtern
 - [x] Geber weiterschieben, auch wenn nichts drin steht
 - [x] feldwechsel soll direkt passieren und der rechner nicht ein- und wieder ausgeklappt werden
 - [x] nächster spieleer händisch korrigierbar (lange auf den Spielernamen drücken?)
@@ -36,3 +34,5 @@
 - [x] verkaspert sich manchmal beim setzen (weiß aber noch nicht wann)
 - [x] taschenrechner soll in der maximalhöhe so begrenzt werden, dass die ersten 2 spalten (eingabespalte + letztes gespeichertes) sichtbar bleibt
 - [x] feldwechel per direkt tipp in feld soll rechner nicht schließen
+- [ ] Settings-Page angleichen mit VolleyAce (Vorschau und Speicherbutton in VolleyAce entfernen!)
+- [ ] Statistik nach Spiel filtern
